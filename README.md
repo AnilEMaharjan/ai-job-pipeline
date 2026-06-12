@@ -71,13 +71,53 @@ python pipeline.py run          # fetch + score in one shot (good for cron)
 
 ### 4. (Optional) LinkedIn referral map
 
-Export your connections from LinkedIn (Settings → Data Privacy → Get a copy of your data → Connections), then:
+Knowing someone at a company is the single best way to get your application seen, so the
+pipeline can map your LinkedIn network onto your target companies.
+
+**Getting your data out of LinkedIn:**
+1. On LinkedIn: click your photo → **Settings & Privacy** → **Data privacy** →
+   **Get a copy of your data**
+2. Choose the option that includes **Connections** (the smaller archive arrives in ~10
+   minutes; the "larger data archive" can take up to a day — either works)
+3. LinkedIn emails you a download link — save the `.zip` to your Downloads folder
+4. Run the matcher (it finds the file in Downloads automatically, or pass the path):
 
 ```bash
-python connections_match.py ~/Downloads/Basic_LinkedInDataExport.zip
+python connections_match.py
 ```
 
-This writes `referral_map.csv` and the dashboard picks it up automatically — every job at a company where you know someone gets a 🤝 badge and a connections panel.
+**What you get:** a ranked `referral_map.csv` (company → person, title, LinkedIn URL,
+referral strength), and the dashboard automatically shows a 🤝 badge on every job where
+you know someone, with the names in the job's Details panel. To flag former coworkers as
+your warmest intros, list past employers in `config/personal.json` first.
+
+**A note on what it can and can't see:** LinkedIn's export only includes each connection's
+*current* employer, so the matcher can't find "used to work at X, now at your target" paths.
+And company names in the export are messy ("Acme Inc" vs "Acme") — the matcher fuzzy-matches,
+but skim the CSV for obvious misses.
+
+## Before you send anything: spot-check the AI's output
+
+The generator is instructed never to invent experience, but **you are responsible for what
+you submit.** Real failure modes we've hit, in order of how much they can hurt you:
+
+1. **Invented facts about the company.** AI text can confidently state specifics that are
+   wrong (in testing, one letter claimed a company operated in "195 countries" — the real
+   number was ~120). Check any number or claim about the company against their website,
+   or delete it.
+2. **Resume facts drifting from your LinkedIn.** Recruiters cross-reference. Verify the
+   tailored resume kept your **exact dates and titles**, and that no overlap or gap appeared
+   that doesn't match your profile. Tailoring should only reorder and rephrase bullets —
+   if a bullet claims a tool, metric, or scope you don't recognize, fix `config/resume.json`
+   and regenerate.
+3. **Overclaimed skills.** If the job wants a tool you've never used, the letter should
+   bridge honestly ("adjacent experience with X") — not claim it. Read paragraph 3 closely;
+   that's where the generator handles gaps.
+4. **Tone tells.** Scan for generic AI filler ("I'm ready to hit the ground running"),
+   em dashes, and form-letter closers. The generator bans these, but belt and suspenders.
+
+A 90-second read of both PDFs before each submission catches all of this. If the cover
+letter mentions anything you couldn't defend in an interview, cut it.
 
 ## Customizing
 

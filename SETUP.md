@@ -69,8 +69,12 @@ If PDFs fail, `pdflatex` is missing — install TinyTeX and run
 ### 5. Show the user around the dashboard
 
 - **Queued** = scored at/above threshold, worth reviewing
-- **Generate** builds a tailored resume + cover letter PDF for that job —
-  remind the user to proofread before sending (AI text can include errors)
+- **Generate** builds a tailored resume + cover letter PDF for that job.
+  **Teach the user to spot-check before sending** (walk them through it on their
+  first generated pair): (1) any factual claim about the company may be invented —
+  verify or delete; (2) dates/titles on the resume must exactly match their
+  LinkedIn; (3) the letter must not claim skills they don't have; (4) cut anything
+  they couldn't defend in an interview. See README "Before you send anything." 
 - **✓ Applied** tracks submissions; **✕** rejects (reversible via the
   "Rejected" filter)
 - Optional: a LinkedIn data export + `python connections_match.py <export.zip>`
