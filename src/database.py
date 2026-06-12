@@ -59,7 +59,11 @@ def init_db() -> None:
                 summary         TEXT,
                 status          TEXT NOT NULL DEFAULT 'new',
                 removed         INTEGER NOT NULL DEFAULT 0,
+                rejected        INTEGER NOT NULL DEFAULT 0,
                 category        TEXT,
+                salary_min      INTEGER,
+                salary_max      INTEGER,
+                salary_raw      TEXT,
                 fetched_at      TEXT NOT NULL,
                 last_seen_at    TEXT,
                 scored_at       TEXT
