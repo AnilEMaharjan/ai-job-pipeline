@@ -51,17 +51,52 @@ def _extract_salary(text: str) -> tuple[int | None, int | None, str | None]:
 
 
 INTERNATIONAL_INDICATORS = {
-    "canada", "uk", "united kingdom", "germany", "france", "australia",
-    "india", "europe", "emea", "apac", "singapore", "ireland", "netherlands",
-    "brazil", "mexico", "japan", "poland", "spain", "italy", "sweden",
+    # countries / regions
+    "canada", "uk", "united kingdom", "england", "scotland", "germany",
+    "france", "australia", "india", "europe", "emea", "apac", "latam",
+    "singapore", "ireland", "netherlands", "brazil", "mexico", "japan",
+    "poland", "spain", "italy", "sweden", "israel", "switzerland", "austria",
+    "belgium", "denmark", "norway", "finland", "portugal", "czechia",
+    "czech republic", "romania", "hungary", "bulgaria", "serbia", "croatia",
+    "estonia", "latvia", "lithuania", "ukraine", "turkey", "greece",
+    "philippines", "vietnam", "indonesia", "malaysia", "thailand", "china",
+    "hong kong", "taiwan", "korea", "pakistan", "nigeria", "kenya", "egypt",
+    "south africa", "argentina", "colombia", "chile", "peru", "uruguay",
+    "costa rica", "new zealand", "uae", "dubai", "saudi arabia", "qatar",
+    # major non-US hub cities (unambiguous ones only)
+    "london", "dublin", "berlin", "munich", "paris", "amsterdam", "stockholm",
+    "copenhagen", "oslo", "helsinki", "zurich", "geneva", "madrid",
+    "barcelona", "lisbon", "warsaw", "krakow", "prague", "vienna", "budapest",
+    "tel aviv", "tokyo", "seoul", "beijing", "shanghai", "bangalore",
+    "bengaluru", "mumbai", "delhi", "hyderabad", "chennai", "pune",
+    "gurgaon", "gurugram", "noida", "manila", "jakarta", "hanoi", "sydney",
+    "melbourne", "brisbane", "auckland", "toronto", "vancouver", "montreal",
+    "ottawa", "calgary", "mexico city", "sao paulo", "são paulo",
+    "buenos aires", "bogota", "santiago", "lima", "lagos", "nairobi",
+    "cape town", "johannesburg", "istanbul", "athens", "kyiv", "belgrade",
+    "tallinn", "edinburgh", "glasgow",
 }
+
+# Word-boundary matching: "uk" must not match Milwaukee, "india" must not
+# match Indiana/Indianapolis.
+_INTL_RE = re.compile(
+    r"\b(" + "|".join(re.escape(i) for i in sorted(INTERNATIONAL_INDICATORS, key=len, reverse=True)) + r")\b"
+)
+
+_US_COUNTRY_NAMES = {"us", "usa", "u.s.", "u.s.a.", "united states", "united states of america"}
 
 
 def _is_us_location(location: str) -> bool:
     if not location:
         return True
-    loc = location.lower()
-    return not any(intl in loc for intl in INTERNATIONAL_INDICATORS)
+    return not _INTL_RE.search(location.lower())
+
+
+def _country_is_us(country: str | None) -> bool | None:
+    """Tri-state check on an explicit country field: True/False, or None if absent."""
+    if not country:
+        return None
+    return country.strip().lower() in _US_COUNTRY_NAMES
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; job-pipeline/1.0)"
@@ -182,7 +217,13 @@ async def fetch_ashby_jobs(slug: str) -> list[dict[str, Any]]:
     for job in data.get("jobs", []):
         if not job.get("isRemote") and "remote" not in (job.get("location") or "").lower():
             continue
-        if not _is_us_location(job.get("location", "")):
+        # Ashby provides a structured country; trust it over string matching when present.
+        country_us = _country_is_us(
+            ((job.get("address") or {}).get("postalAddress") or {}).get("addressCountry")
+        )
+        if country_us is False:
+            continue
+        if country_us is None and not _is_us_location(job.get("location", "")):
             continue
 
         description = re.sub(r"<[^>]+>", " ", job.get("descriptionHtml", "") or "")
