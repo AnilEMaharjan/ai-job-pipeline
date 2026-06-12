@@ -348,8 +348,35 @@ def _compile_tex(tex: str, output_pdf: Path) -> Path:
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
+def _check_date_overlaps(resume_json: dict[str, Any]) -> None:
+    """Warn loudly if experience dates overlap — recruiters cross-check LinkedIn."""
+    from datetime import date
+
+    def parse(s: str) -> date:
+        if not s or s.lower() == "present":
+            return date(2099, 1, 1)
+        y, m = s.split("-")[:2]
+        return date(int(y), int(m), 1)
+
+    exps = sorted(
+        resume_json.get("experience", []),
+        key=lambda e: parse(e.get("start_date", "")),
+        reverse=True,
+    )
+    prev_start, prev_company = None, None
+    for e in exps:
+        end = parse(e.get("end_date", ""))
+        if prev_start and end > prev_start:
+            print(
+                f"  ⚠️  WARNING: {e.get('company')} ({e.get('start_date')}–{e.get('end_date')}) "
+                f"overlaps {prev_company} — verify dates match your LinkedIn before sending."
+            )
+        prev_start, prev_company = parse(e.get("start_date", "")), e.get("company")
+
+
 def write_resume_pdf(resume_json: dict[str, Any], output_path: str | Path) -> Path:
     output_path = Path(output_path)
+    _check_date_overlaps(resume_json)
     tex = _build_resume_tex(resume_json)
     # Also save the .tex for inspection
     output_path.with_suffix(".tex").write_text(tex, encoding="utf-8")
