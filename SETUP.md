@@ -47,8 +47,27 @@ cp config/candidate_notes.example.md config/candidate_notes.md
 This is the candidate's living memory: tools, stories, personal angles, and
 preferences learned over time. The generator reads it on every run, and
 CLAUDE.md instructs assistants to append new facts as they come up in
-conversation. Seed it now with anything the user tells you that doesn't fit
-the resume schema.
+conversation.
+
+**Seed it now by interviewing the user.** Ask these one or two at a time
+(not as a wall of questions), and write their answers into the matching
+sections:
+
+1. "What tools or technologies have you used that aren't on your resume,
+   even lightly?" (these close scoring gaps and beat keyword filters)
+2. "What two or three pieces of work are you proudest of? Any numbers
+   attached?" (cover-letter proof points)
+3. "Ever given a talk, written a post, or shipped anything public?"
+   (third-party proof beats self-description)
+4. "Have you touched regulated or specialized domains, fintech, healthcare,
+   security, even indirectly?" (domain bridges for those industries)
+5. "Any genuine personal connection to a cause or industry, family, health,
+   hobbies?" (authentic mission-fit angles, used sparingly)
+6. "Hard constraints: location rules, salary floor, companies you'd never
+   apply to, past employers to exclude?"
+7. "Any writing pet peeves for materials that go out under your name?"
+
+Only record what they actually say; confirm anything you're unsure about.
 
 ### 3. Personalize the search
 
