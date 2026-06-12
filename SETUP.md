@@ -38,6 +38,18 @@ Guidelines while building it:
   tools as gaps.
 - Recent roles get 4–7 bullets; older roles 2–3.
 
+### 2.5 Start the candidate notes file
+
+```bash
+cp config/candidate_notes.example.md config/candidate_notes.md
+```
+
+This is the candidate's living memory: tools, stories, personal angles, and
+preferences learned over time. The generator reads it on every run, and
+CLAUDE.md instructs assistants to append new facts as they come up in
+conversation. Seed it now with anything the user tells you that doesn't fit
+the resume schema.
+
 ### 3. Personalize the search
 
 - **Companies:** `config/companies.json` ships with ~1,100 tech companies. Ask the

@@ -4,11 +4,26 @@ import copy
 import json
 import os
 import re
+from pathlib import Path
 from typing import Any
 
 import anthropic
 
 MODEL = "claude-sonnet-4-6"
+
+# Living candidate memory: verified facts learned over time (tools, stories,
+# angles) that may not be on the resume. Gitignored; see the .example template.
+NOTES_PATH = Path(__file__).parent.parent / "config" / "candidate_notes.md"
+
+
+def _candidate_notes() -> str:
+    try:
+        text = NOTES_PATH.read_text().strip()
+    except FileNotFoundError:
+        return ""
+    # strip HTML comments (template instructions) and cap size
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL).strip()
+    return text[:5000]
 
 
 def _get_client() -> anthropic.Anthropic:
@@ -69,6 +84,9 @@ def tailor_resume(
 
 The candidate's strongest selling points for THIS role:
 {strengths_text}
+
+Additional verified candidate facts (from their notes file; use where relevant, never contradict the resume, never invent beyond these):
+{_candidate_notes() or "(none)"}
 
 Current professional summary:
 <summary>
@@ -170,6 +188,9 @@ The candidate's strongest, most specific selling points for THIS role (use the b
 
 Known gaps for this role (address the single most important one gracefully in paragraph 3, as a bridge, never apologize or dwell):
 {gaps_text}
+
+Additional verified candidate facts (from their notes file; use where genuinely relevant — personal angles only when authentic to this company's mission — and never invent beyond these):
+{_candidate_notes() or "(none)"}
 
 Job description:
 {job_description[:4000]}

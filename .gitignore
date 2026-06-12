@@ -25,3 +25,4 @@ build/
 # ── OS / editor ──────────────────────────────────────────
 .DS_Store
 .claude/
+config/candidate_notes.md
