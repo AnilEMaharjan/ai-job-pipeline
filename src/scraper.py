@@ -231,14 +231,22 @@ async def fetch_ashby_jobs(slug: str) -> list[dict[str, Any]]:
         if not description:
             description = job.get("descriptionPlain", "") or ""
 
-        # Structured compensation from Ashby
+        # Structured compensation from Ashby: salary lives in summaryComponents
+        # (or compensationTiers[].components), not at the top level.
         comp = job.get("compensation") or {}
-        sal_min = comp.get("minValue") or comp.get("min")
-        sal_max = comp.get("maxValue") or comp.get("max")
-        sal_raw = comp.get("summary") or comp.get("compensationTierSummary")
+        sal_min = sal_max = None
+        sal_raw = comp.get("compensationTierSummary") or comp.get("scrapeableCompensationSalarySummary")
+        components = list(comp.get("summaryComponents") or [])
+        for tier in comp.get("compensationTiers") or []:
+            components.extend(tier.get("components") or [])
+        for c in components:
+            if c.get("compensationType") == "Salary" and (c.get("minValue") or c.get("maxValue")):
+                sal_min, sal_max = c.get("minValue"), c.get("maxValue")
+                break
         # Fall back to description extraction
         if not sal_min and not sal_max:
-            sal_min, sal_max, sal_raw = _extract_salary(description)
+            sal_min, sal_max, fallback_raw = _extract_salary(description)
+            sal_raw = sal_raw or fallback_raw
 
         jobs.append(
             {
