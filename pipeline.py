@@ -513,9 +513,12 @@ def run(ctx):
 def dashboard(port):
     """Launch the web dashboard."""
     import uvicorn
+    import webbrowser
     console.print(Panel(f"[bold blue]Opening dashboard at http://localhost:{port}[/bold blue]", expand=False))
-    import subprocess, time
-    subprocess.Popen(["open", f"http://localhost:{port}"])
+    try:
+        webbrowser.open(f"http://localhost:{port}")
+    except Exception:
+        pass  # headless / no browser — the printed URL is enough
     uvicorn.run("dashboard.app:app", host="0.0.0.0", port=port, reload=False)
 
 

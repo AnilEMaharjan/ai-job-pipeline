@@ -14,11 +14,25 @@ fetch  →  score  →  review (dashboard)  →  generate  →  apply
 4. **Generate** — one click produces a role-tailored resume and a four-paragraph cover letter (leads with your strongest hook, bridges your top gap, bans em dashes and generic closers), rendered to PDF via LaTeX.
 5. **Referral map** — `connections_match.py` cross-references your LinkedIn data export against your target companies, ranks contacts by seniority and role relevance, and flags ex-colleagues.
 
-## Quick start
+## Quick start (no terminal experience needed)
 
-**Easiest path:** run `./setup.sh` — it creates the environment, installs dependencies, sets up your config files, and (optionally) installs LaTeX.
-
-**Even easier if you use Claude Code:** open this folder and say *"set this up for me using SETUP.md"* — then hand it your existing resume PDF and say *"build my config/resume.json from this."*
+1. **Download:** click the green **Code** button above → **Download ZIP** → unzip it.
+   (Or `git clone https://github.com/AnilEMaharjan/ai-job-pipeline.git` if you know git.)
+2. **Set up:** open the Terminal app, type `cd ` (with a space), drag the unzipped folder onto the
+   Terminal window, press Enter, then run:
+   ```bash
+   bash setup.sh
+   ```
+   It installs everything and asks for your Anthropic API key
+   (get one at https://console.anthropic.com → API Keys).
+3. **Add your resume:** the easiest way is [Claude Code](https://claude.com/claude-code) — open this
+   folder in it and say *"set this up for me using SETUP.md"*, then hand it your resume PDF and say
+   *"build my config/resume.json from this."* It will also tailor the company list and scoring to you.
+4. **Run it:**
+   ```bash
+   bash run.sh update     # fetch jobs + score them + open the dashboard
+   ```
+   After that, `bash run.sh` opens the dashboard any time, and `bash run.sh update` pulls fresh jobs.
 
 ## Manual setup
 
