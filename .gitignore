@@ -1,0 +1,27 @@
+# ── Secrets ──────────────────────────────────────────────
+.env
+config/service_account.json
+
+# ── Personal data (use the .example templates instead) ───
+config/resume.json
+config/personal.json
+applications/
+data/
+logs/
+referral_map.csv
+*.csv
+
+# ── Python ───────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# ── OS / editor ──────────────────────────────────────────
+.DS_Store
+.claude/

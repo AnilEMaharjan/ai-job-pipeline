@@ -1,0 +1,57 @@
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "phone": "(555) 555-5555",
+  "location": "City, ST",
+  "linkedin": "https://www.linkedin.com/in/janedoe/",
+  "summary": "Two to four sentences describing your career arc, core expertise, and what differentiates you. This is used in resume tailoring, cover letter generation, and job scoring.",
+  "skills": {
+    "languages_and_development": ["SQL", "Python", "dbt", "Git"],
+    "orchestration_and_etl": ["Airflow", "Fivetran"],
+    "data_warehouses": ["Snowflake", "BigQuery"],
+    "visualization": ["Looker", "Tableau"],
+    "gtm_and_product": ["Salesforce", "HubSpot"]
+  },
+  "experience": [
+    {
+      "company": "Acme Corp",
+      "sector": "B2B SaaS",
+      "title": "Senior Analytics Engineer",
+      "location": "Remote",
+      "start_date": "2022-01",
+      "end_date": "Present",
+      "description": "One-line description of your scope in this role.",
+      "platforms": ["Snowflake", "dbt", "Looker"],
+      "key_models": "Optional comma-separated list of notable data models or systems you built",
+      "bullets": [
+        "Action-verb-first bullet describing a concrete, quantified achievement.",
+        "Another achievement. Keep 4-7 bullets for recent roles, 2-3 for older ones."
+      ]
+    },
+    {
+      "company": "Beta Inc",
+      "sector": "Fintech",
+      "title": "Analytics Engineer",
+      "location": "Remote",
+      "start_date": "2019-06",
+      "end_date": "2021-12",
+      "description": "One-line description.",
+      "bullets": [
+        "Achievement bullet.",
+        "Achievement bullet."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "State University",
+      "degree": "Bachelor's, Field of Study",
+      "location": "City, ST",
+      "graduation_year": "2015"
+    }
+  ],
+  "certifications": [
+    "Any certifications, one per line"
+  ],
+  "projects": []
+}
