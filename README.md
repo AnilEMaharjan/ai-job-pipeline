@@ -14,7 +14,13 @@ fetch  →  score  →  review (dashboard)  →  generate  →  apply
 4. **Generate** — one click produces a role-tailored resume and a four-paragraph cover letter (leads with your strongest hook, bridges your top gap, bans em dashes and generic closers), rendered to PDF via LaTeX.
 5. **Referral map** — `connections_match.py` cross-references your LinkedIn data export against your target companies, ranks contacts by seniority and role relevance, and flags ex-colleagues.
 
-## Setup
+## Quick start
+
+**Easiest path:** run `./setup.sh` — it creates the environment, installs dependencies, sets up your config files, and (optionally) installs LaTeX.
+
+**Even easier if you use Claude Code:** open this folder and say *"set this up for me using SETUP.md"* — then hand it your existing resume PDF and say *"build my config/resume.json from this."*
+
+## Manual setup
 
 ### 1. Install dependencies
 
