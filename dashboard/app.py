@@ -7,7 +7,7 @@ import subprocess
 import threading
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
 DB_PATH = Path(__file__).parent.parent / "data" / "jobs.db"
@@ -27,6 +27,26 @@ RESUME_PDF = f"{_last}_Resume.pdf"
 COVER_PDF = f"{_last}_CoverLetter.pdf"
 
 app = FastAPI(title="Job Pipeline Dashboard")
+
+_LOCAL_HOSTS = ("127.0.0.1", "localhost")
+
+
+@app.middleware("http")
+async def _csrf_guard(request: Request, call_next):
+    """Block cross-site state-changing requests (CSRF). Safe methods pass. For
+    mutating methods, require Sec-Fetch-Site to be same-origin/none (modern
+    browsers), falling back to an Origin/Referer localhost check for older ones."""
+    if request.method not in ("GET", "HEAD", "OPTIONS"):
+        sfs = request.headers.get("sec-fetch-site")
+        if sfs is not None:
+            ok = sfs in ("same-origin", "none")
+        else:
+            from urllib.parse import urlparse
+            origin = request.headers.get("origin") or request.headers.get("referer") or ""
+            ok = (urlparse(origin).hostname in _LOCAL_HOSTS) if origin else True
+        if not ok:
+            return JSONResponse({"detail": "cross-site request blocked"}, status_code=403)
+    return await call_next(request)
 
 # Referral map (LinkedIn connections at target companies), keyed by company name.
 _referral_cache: dict = {"mtime": None, "data": {}}
