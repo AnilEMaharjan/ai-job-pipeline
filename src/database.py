@@ -32,6 +32,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
         "salary_max":   "ALTER TABLE jobs ADD COLUMN salary_max INTEGER",
         "salary_raw":   "ALTER TABLE jobs ADD COLUMN salary_raw TEXT",
         "rejected":     "ALTER TABLE jobs ADD COLUMN rejected INTEGER NOT NULL DEFAULT 0",
+        "reject_reason": "ALTER TABLE jobs ADD COLUMN reject_reason TEXT",
     }
     for col, sql in migrations.items():
         if col not in cols:
@@ -60,6 +61,7 @@ def init_db() -> None:
                 status          TEXT NOT NULL DEFAULT 'new',
                 removed         INTEGER NOT NULL DEFAULT 0,
                 rejected        INTEGER NOT NULL DEFAULT 0,
+                reject_reason   TEXT,
                 category        TEXT,
                 salary_min      INTEGER,
                 salary_max      INTEGER,
@@ -303,3 +305,23 @@ def get_job_by_id(job_id: int) -> dict[str, Any] | None:
     with get_connection() as conn:
         row = conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
     return dict(row) if row else None
+
+
+def get_rejection_feedback(limit: int = 25) -> str:
+    """Format the candidate's recent reject reasons as guidance for the scorer,
+    so future jobs similar to ones they passed on score lower."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT company, title, reject_reason FROM jobs "
+            "WHERE rejected = 1 AND reject_reason IS NOT NULL AND TRIM(reject_reason) != '' "
+            "ORDER BY id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+    if not rows:
+        return ""
+    lines = [f'- {r["title"]} at {r["company"]}: "{r["reject_reason"]}"' for r in rows]
+    return (
+        "The candidate has personally REJECTED these roles for the reasons given. "
+        "Treat these as strong negative signal: score roles with similar attributes lower, "
+        "and call out the matching reason in 'missing'.\n" + "\n".join(lines)
+    )

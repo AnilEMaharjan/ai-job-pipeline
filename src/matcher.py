@@ -85,6 +85,7 @@ def score_job(
     resume_json: dict[str, Any],
     job: dict[str, Any],
     client: anthropic.Anthropic | None = None,
+    feedback: str = "",
 ) -> dict[str, Any]:
     """
     Score a single job against the resume.
@@ -102,7 +103,8 @@ def score_job(
     title = job.get("title", "Unknown Role")
     company = job.get("company", "Unknown Company")
 
-    user_content = f"Please evaluate this job posting:\n\nRole: {title}\nCompany: {company}\n\nJob Description:\n{job_description}"
+    feedback_block = f"\n\n<candidate_rejection_feedback>\n{feedback}\n</candidate_rejection_feedback>" if feedback else ""
+    user_content = f"Please evaluate this job posting:\n\nRole: {title}\nCompany: {company}\n\nJob Description:\n{job_description}{feedback_block}"
 
     def _call_and_parse() -> dict:
         message = client.messages.create(
@@ -170,10 +172,19 @@ def score_jobs_batch(
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
     results = []
 
+    # Learn from the candidate's own rejections (with reasons) to steer scoring.
+    try:
+        from src.database import get_rejection_feedback
+        feedback = get_rejection_feedback()
+        if feedback:
+            print(f"  (applying feedback from your past rejections)")
+    except Exception:
+        feedback = ""
+
     for i, job in enumerate(jobs, 1):
         print(f"  Scoring [{i}/{len(jobs)}]: {job.get('company')} – {job.get('title')}")
         try:
-            result = score_job(resume_json, job, client=client)
+            result = score_job(resume_json, job, client=client, feedback=feedback)
             result["job_id"] = job.get("id")
             results.append(result)
         except Exception as exc:

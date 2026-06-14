@@ -328,11 +328,14 @@ def remove_job(job_id: int):
 
 
 @app.post("/api/jobs/{job_id}/dismiss")
-def dismiss_job(job_id: int):
-    """User rejection flag — orthogonal to status. Keeps the workflow status
-    (queued/applied/etc.) intact so it can be reviewed or restored."""
+def dismiss_job(job_id: int, reason: str = ""):
+    """User rejection flag — orthogonal to status. Optional reason is stored and
+    fed back into future scoring so similar jobs rank lower."""
     conn = get_db()
-    conn.execute("UPDATE jobs SET rejected=1 WHERE id=?", (job_id,))
+    conn.execute(
+        "UPDATE jobs SET rejected=1, reject_reason=? WHERE id=?",
+        (reason.strip() or None, job_id),
+    )
     conn.commit()
     return {"ok": True}
 

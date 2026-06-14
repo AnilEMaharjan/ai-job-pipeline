@@ -387,7 +387,13 @@ function toggleDetails(id) {
 }
 
 async function action(id, type) {
-  await fetch(`/api/jobs/${id}/${type}`, { method: 'POST' });
+  let url = `/api/jobs/${id}/${type}`;
+  if (type === 'dismiss') {
+    const reason = prompt("Why are you passing on this one? (optional — this teaches future scoring)\ne.g. too junior, hybrid, too ML-heavy, pay too low");
+    if (reason === null) return;  // cancelled
+    if (reason.trim()) url += `?reason=${encodeURIComponent(reason.trim())}`;
+  }
+  await fetch(url, { method: 'POST' });
   loadJobs();
   loadStats();
 }
