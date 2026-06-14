@@ -126,6 +126,13 @@ letter mentions anything you couldn't defend in an interview, cut it.
 - **Scoring rubric** — the prompt in `src/matcher.py` defines what "fit" means; edit it to match your own profile and dealbreakers.
 - **Threshold** — `SCORE_THRESHOLD` in `.env` (default 70) sets the queue bar.
 
+## Security
+
+The dashboard has **no authentication** — anyone who can reach the port can read your jobs, resume data, and generated materials, and trigger fetch/score/generate actions (which spend your API credits). It is meant to run on your own machine only.
+
+- It binds to `127.0.0.1` (localhost) by design. **Do not change this to `0.0.0.0`** or otherwise expose it to your network or the internet. If you need remote access, put it behind an authenticated reverse proxy or an SSH tunnel instead.
+- Job-board text, AI output, and LinkedIn data are HTML-escaped before rendering, so a malicious job posting can't inject scripts into the dashboard.
+
 ## Privacy
 
 All personal data stays local and gitignored: `.env` (API key), `config/resume.json`, `config/personal.json`, `data/` (job database), `applications/` (generated materials), and `referral_map.csv`. The repo ships only code, the company list, and `.example` templates.

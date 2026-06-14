@@ -237,6 +237,14 @@ function scoreLabel(score) {
   return score ? score : '—';
 }
 
+// Escape untrusted strings (job-board text, LLM output, LinkedIn data) before
+// injecting into innerHTML / attributes, to prevent stored XSS.
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 async function loadStats() {
   const res = await fetch('/api/stats');
   const s = await res.json();
@@ -323,18 +331,19 @@ async function loadJobs() {
     const STATUS_PILL = { rejected: 'scored out', queued: 'queued', applied: 'applied', new: 'new', filtered: 'filtered' };
     const statusPill = `<span class="status-pill ${j.status}">${STATUS_PILL[j.status] || j.status}</span>${j.rejected ? '<span class="status-pill rejected-me">rejected by me</span>' : ''}`;
     const strengthsHtml = j.strengths.length
-      ? `<div class="detail-col"><h4>Strengths</h4><ul>${j.strengths.map(s => `<li>${s}</li>`).join('')}</ul></div>`
+      ? `<div class="detail-col"><h4>Strengths</h4><ul>${j.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>`
       : '';
     const missingHtml = j.missing_skills.length
-      ? `<div class="detail-col missing"><h4>Gaps</h4><ul>${j.missing_skills.map(m => `<li>${m}</li>`).join('')}</ul></div>`
+      ? `<div class="detail-col missing"><h4>Gaps</h4><ul>${j.missing_skills.map(m => `<li>${esc(m)}</li>`).join('')}</ul></div>`
       : '';
-    const summaryHtml = j.summary ? `<p class="summary-text">${j.summary.substring(0, 300)}${j.summary.length > 300 ? '…' : ''}</p>` : '';
+    const summaryHtml = j.summary ? `<p class="summary-text">${esc(j.summary.substring(0, 300))}${j.summary.length > 300 ? '…' : ''}</p>` : '';
     const conns = j.connections || [];
     const connsHtml = conns.length
       ? `<div class="detail-col conns"><h4>🤝 Your connections here (${conns.length})</h4><ul>${conns.map(c => {
           const ex = c.ex_colleague ? `<span class="conn-ex">ex-colleague</span>` : '';
-          const nm = c.url ? `<a href="${c.url}" target="_blank">${c.name}</a>` : c.name;
-          return `<li>${nm} — ${c.title}${ex}</li>`;
+          const safeUrl = /^https?:\/\//i.test(c.url || '') ? c.url : '';
+          const nm = safeUrl ? `<a href="${esc(safeUrl)}" target="_blank" rel="noopener">${esc(c.name)}</a>` : esc(c.name);
+          return `<li>${nm} — ${esc(c.title)}${ex}</li>`;
         }).join('')}</ul></div>`
       : '';
 
@@ -342,7 +351,8 @@ async function loadJobs() {
     const applyBtn   = j.status !== 'applied' ? `<button class="btn success" onclick="action(${j.id},'apply')">✓ Applied</button>` : '';
     const generateBtn = `<button class="btn warning" id="gen-btn-${j.id}" onclick="generateMaterials(${j.id})">⚙ Generate</button>`;
     const materialsBtn = j.has_materials ? `<button class="btn primary" onclick="openMaterials(${j.id})">📄 Open</button>` : '';
-    const urlBtn     = j.url ? `<a class="btn ghost" href="${j.url}" target="_blank">🔗 Job</a>` : '';
+    const jobUrl     = /^https?:\/\//i.test(j.url || '') ? j.url : '';
+    const urlBtn     = jobUrl ? `<a class="btn ghost" href="${esc(jobUrl)}" target="_blank" rel="noopener">🔗 Job</a>` : '';
     const removeBtn  = j.rejected
       ? `<button class="btn" title="Restore (un-reject)" onclick="action(${j.id},'unreject')">↩ Restore</button>`
       : `<button class="btn danger" title="Reject (hide from view, keep to review later)" onclick="action(${j.id},'dismiss')">✕</button>`;
@@ -352,15 +362,15 @@ async function loadJobs() {
         <div class="job-top">
           <div class="score-badge ${sc}">${scoreLabel(j.score)}</div>
           <div class="job-info">
-            <div class="job-title" title="${j.title}">${j.title}</div>
+            <div class="job-title" title="${esc(j.title)}">${esc(j.title)}</div>
             <div class="job-meta">
-              <span><strong>${j.company}</strong></span>
-              ${conns.length ? `<span class="conn-tag" title="${conns.map(c => c.name + ' — ' + c.title).join('\\n')}">🤝 ${conns.length} connection${conns.length > 1 ? 's' : ''}</span>` : ''}
-              ${(j.also_applied && j.also_applied.length) ? `<span class="applied-here-tag" title="Already applied at ${j.company}:\\n${j.also_applied.join('\\n')}">📋 applied here (${j.also_applied.length})</span>` : ''}
-              ${j.category ? `<span class="category-tag">${j.category}</span>` : ''}
-              ${j.platform ? `<span class="platform-tag">${j.platform}</span>` : ''}
-              ${j.location ? `<span>📍 ${j.location}</span>` : ''}
-              ${j.salary_min && j.salary_max ? `<span>💰 $${Math.round(j.salary_min/1000)}k–$${Math.round(j.salary_max/1000)}k</span>` : j.salary_max ? `<span>💰 up to $${Math.round(j.salary_max/1000)}k</span>` : j.salary_raw ? `<span>💰 ${j.salary_raw}</span>` : ''}
+              <span><strong>${esc(j.company)}</strong></span>
+              ${conns.length ? `<span class="conn-tag" title="${esc(conns.map(c => c.name + ' — ' + c.title).join('\\n'))}">🤝 ${conns.length} connection${conns.length > 1 ? 's' : ''}</span>` : ''}
+              ${(j.also_applied && j.also_applied.length) ? `<span class="applied-here-tag" title="${esc('Already applied at ' + j.company + ':\\n' + j.also_applied.join('\\n'))}">📋 applied here (${j.also_applied.length})</span>` : ''}
+              ${j.category ? `<span class="category-tag">${esc(j.category)}</span>` : ''}
+              ${j.platform ? `<span class="platform-tag">${esc(j.platform)}</span>` : ''}
+              ${j.location ? `<span>📍 ${esc(j.location)}</span>` : ''}
+              ${j.salary_min && j.salary_max ? `<span>💰 $${Math.round(j.salary_min/1000)}k–$${Math.round(j.salary_max/1000)}k</span>` : j.salary_max ? `<span>💰 up to $${Math.round(j.salary_max/1000)}k</span>` : j.salary_raw ? `<span>💰 ${esc(j.salary_raw)}</span>` : ''}
               ${statusPill}
             </div>
           </div>
