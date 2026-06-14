@@ -90,7 +90,7 @@ Only record what they actually say; confirm anything you're unsure about.
 source .venv/bin/activate
 python pipeline.py fetch       # expect: thousands of jobs found, some 404s are normal
 python pipeline.py score       # expect: pre-filter skips most; the rest get scored
-python pipeline.py dashboard   # expect: dashboard at http://localhost:8765
+python pipeline.py dashboard   # expect: dashboard at http://localhost:8766
 ```
 
 If scoring errors with an auth message, the API key in `.env` is wrong.

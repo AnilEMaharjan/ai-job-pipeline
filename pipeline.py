@@ -509,7 +509,7 @@ def run(ctx):
 
 
 @cli.command()
-@click.option("--port", default=8765, help="Port to run on.")
+@click.option("--port", default=8766, help="Port to run on (8765 is the daily-briefing assistant).")
 def dashboard(port):
     """Launch the web dashboard."""
     import uvicorn
@@ -519,7 +519,8 @@ def dashboard(port):
         webbrowser.open(f"http://localhost:{port}")
     except Exception:
         pass  # headless / no browser — the printed URL is enough
-    uvicorn.run("dashboard.app:app", host="0.0.0.0", port=port, reload=False)
+    # localhost only: keeps resumes / cover letters / salary data off the LAN
+    uvicorn.run("dashboard.app:app", host="127.0.0.1", port=port, reload=False)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ fetch  →  score  →  review (dashboard)  →  generate  →  apply
 
 1. **Fetch** — pulls remote US jobs from Greenhouse, Lever, Ashby, Recruitee, and Workable boards for every company in `config/companies.json` (async, ~1,100 companies in a few minutes). Extracts salary where available, detects hybrid/in-office postings, and archives stale listings.
 2. **Score** — a title/location pre-filter screens obvious mismatches, then Claude scores each remaining job 0–100 against your resume (prompt caching keeps cost low). Jobs at or above `SCORE_THRESHOLD` land in your queue with strengths, gaps, and a fit summary.
-3. **Review** — a FastAPI dashboard (`localhost:8765`) with multi-select status filters, score/salary ranges, full-text search, a personal reject flag, and 🤝 badges showing jobs at companies where you have LinkedIn connections.
+3. **Review** — a FastAPI dashboard (`localhost:8766`) with multi-select status filters, score/salary ranges, full-text search, a personal reject flag, and 🤝 badges showing jobs at companies where you have LinkedIn connections.
 4. **Generate** — one click produces a role-tailored resume and a four-paragraph cover letter (leads with your strongest hook, bridges your top gap, bans em dashes and generic closers), rendered to PDF via LaTeX.
 5. **Referral map** — `connections_match.py` cross-references your LinkedIn data export against your target companies, ranks contacts by seniority and role relevance, and flags ex-colleagues.
 
@@ -65,7 +65,7 @@ Your resume JSON drives everything: scoring, tailoring, cover letters, and PDF f
 ```bash
 python pipeline.py fetch        # pull jobs from all company boards
 python pipeline.py score        # AI-score the new ones
-python pipeline.py dashboard    # review at http://localhost:8765
+python pipeline.py dashboard    # review at http://localhost:8766
 python pipeline.py run          # fetch + score in one shot (good for cron)
 ```
 
