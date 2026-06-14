@@ -11,42 +11,73 @@ GREENHOUSE_URL = "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content
 LEVER_URL = "https://api.lever.co/v0/postings/{slug}?mode=json"
 ASHBY_URL = "https://api.ashbyhq.com/posting-api/job-board/{slug}?includeCompensation=true"
 
+# A dollar figure is only treated as salary if there's pay context nearby, and
+# never if there's funding/revenue context (so "$2B in revenue" / "$50M raised"
+# don't get mistaken for a salary).
+_SALARY_CTX = re.compile(
+    r"salary|compensation|base pay|base salary|pay range|pay rate|/\s*yr|per year|"
+    r"annually|annual|\bOTE\b|/\s*hour|/\s*hr|hourly|this (?:role|position)|"
+    r"the (?:range|position)|expected pay|target (?:pay|compensation)",
+    re.I,
+)
+_NON_SALARY_CTX = re.compile(
+    r"revenue|raised|funding|valuation|\bARR\b|in funding|series [a-e]\b|"
+    r"backed|invest|market cap|in sales|contract value|saved|savings|managed",
+    re.I,
+)
+
+
 def _extract_salary(text: str) -> tuple[int | None, int | None, str | None]:
-    """Extract salary range from job description text. Returns (min, max, raw_string)."""
+    """Extract a salary range from description text. Returns (min, max, raw_string).
+    Only matches dollar figures that sit in pay context, not funding/revenue."""
     if not text:
         return None, None, None
-    # Patterns: $120,000 - $160,000 | $120k-$160k | $120K to $160K | up to $200K
-    patterns = [
-        r'\$\s*([\d,]+)[Kk]?\s*(?:–|-|to)\s*\$\s*([\d,]+)[Kk]?(?:\s*(?:per year|/yr|annually|USD))?',
-        r'([\d,]+)[Kk]\s*(?:–|-|to)\s*([\d,]+)[Kk]',
-        r'up to \$\s*([\d,]+)[Kk]?',
-        r'salary.*?\$\s*([\d,]+)[Kk]?.*?\$\s*([\d,]+)[Kk]?',
+
+    def parse_num(s: str) -> int:
+        s = s.replace(",", "").strip().lower()
+        if s.endswith("k"):
+            return int(float(s[:-1]) * 1000)
+        return int(float(s))
+
+    # Range patterns. Note the second number's $ and K suffix are BOTH optional,
+    # so "$105,000-115,000/yr" and "$120k-$160k" and "$120,000 to $160,000" all match.
+    range_patterns = [
+        r'\$\s*([\d,]+)\s*([Kk])?\s*(?:–|-|—|to)\s*\$?\s*([\d,]+)\s*([Kk])?',
     ]
-    text_lower = text.lower()
-    for pattern in patterns:
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            groups = m.groups()
-            raw = m.group(0).strip()
+    single_patterns = [
+        r'up to \$\s*([\d,]+)\s*([Kk])?',
+        r'\$\s*([\d,]+)\s*([Kk])?\s*(?:per year|/\s*yr|annually)',
+    ]
+
+    for pattern in range_patterns:
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            window = text[max(0, m.start() - 60): m.end() + 60]
+            if _NON_SALARY_CTX.search(window) or not _SALARY_CTX.search(window):
+                continue
             try:
-                def parse_num(s: str) -> int:
-                    s = s.replace(',', '').strip()
-                    n = float(s)
-                    # If looks like thousands (< 1000), multiply
-                    if n < 1000:
-                        n *= 1000
-                    return int(n)
-                if len(groups) >= 2 and groups[0] and groups[1]:
-                    lo = parse_num(groups[0])
-                    hi = parse_num(groups[1])
-                    if 30000 < lo < 1000000 and 30000 < hi < 1000000:
-                        return lo, hi, raw
-                elif len(groups) >= 1 and groups[0]:
-                    val = parse_num(groups[0])
-                    if 30000 < val < 1000000:
-                        return None, val, raw
+                lo_raw, lo_k, hi_raw, hi_k = m.groups()
+                lo = parse_num(lo_raw + ("k" if lo_k else ""))
+                hi = parse_num(hi_raw + ("k" if hi_k else ""))
+                # if first has K but second doesn't, second is same magnitude (120k-160 -> 160k)
+                if lo_k and not hi_k and hi < 1000:
+                    hi *= 1000
+                if 20000 < lo < 1000000 and 20000 < hi < 1000000 and hi >= lo:
+                    return lo, hi, m.group(0).strip()
             except (ValueError, TypeError):
                 continue
+
+    for pattern in single_patterns:
+        for m in re.finditer(pattern, text, re.IGNORECASE):
+            window = text[max(0, m.start() - 60): m.end() + 60]
+            if _NON_SALARY_CTX.search(window) or not _SALARY_CTX.search(window):
+                continue
+            try:
+                val = parse_num(m.group(1) + ("k" if m.group(2) else ""))
+                if 20000 < val < 1000000:
+                    return None, val, m.group(0).strip()
+            except (ValueError, TypeError):
+                continue
+
     return None, None, None
 
 
