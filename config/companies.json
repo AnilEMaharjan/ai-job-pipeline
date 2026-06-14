@@ -5712,5 +5712,565 @@
     "name": "Finout",
     "platform": "ashby",
     "slug": "finout"
+  },
+  {
+    "name": "Mastra",
+    "platform": "ashby",
+    "slug": "mastra"
+  },
+  {
+    "name": "HUD",
+    "platform": "ashby",
+    "slug": "hud"
+  },
+  {
+    "name": "Infinite",
+    "platform": "ashby",
+    "slug": "infinite"
+  },
+  {
+    "name": "Lingo.dev",
+    "platform": "ashby",
+    "slug": "lingodotdev"
+  },
+  {
+    "name": "CTGT",
+    "platform": "ashby",
+    "slug": "ctgt"
+  },
+  {
+    "name": "Sphinx",
+    "platform": "ashby",
+    "slug": "sphinx"
+  },
+  {
+    "name": "telli",
+    "platform": "ashby",
+    "slug": "telli"
+  },
+  {
+    "name": "Ryvn",
+    "platform": "ashby",
+    "slug": "ryvn"
+  },
+  {
+    "name": "Abundant",
+    "platform": "ashby",
+    "slug": "abundant"
+  },
+  {
+    "name": "Coframe",
+    "platform": "ashby",
+    "slug": "coframe"
+  },
+  {
+    "name": "Cloaked",
+    "platform": "ashby",
+    "slug": "cloaked"
+  },
+  {
+    "name": "Hedra",
+    "platform": "ashby",
+    "slug": "hedra"
+  },
+  {
+    "name": "Kombo",
+    "platform": "ashby",
+    "slug": "kombo"
+  },
+  {
+    "name": "Astra",
+    "platform": "ashby",
+    "slug": "astra"
+  },
+  {
+    "name": "Formance",
+    "platform": "ashby",
+    "slug": "formance"
+  },
+  {
+    "name": "Payabli",
+    "platform": "ashby",
+    "slug": "payabli"
+  },
+  {
+    "name": "Delphi",
+    "platform": "ashby",
+    "slug": "delphi"
+  },
+  {
+    "name": "Spade",
+    "platform": "greenhouse",
+    "slug": "spade"
+  },
+  {
+    "name": "Orum",
+    "platform": "ashby",
+    "slug": "orum"
+  },
+  {
+    "name": "Windmill",
+    "platform": "ashby",
+    "slug": "windmill"
+  },
+  {
+    "name": "Brellium",
+    "platform": "ashby",
+    "slug": "brellium"
+  },
+  {
+    "name": "Savvy",
+    "platform": "ashby",
+    "slug": "savvy"
+  },
+  {
+    "name": "Opal",
+    "platform": "ashby",
+    "slug": "opal"
+  },
+  {
+    "name": "Assemble",
+    "platform": "ashby",
+    "slug": "assemble"
+  },
+  {
+    "name": "Compa",
+    "platform": "ashby",
+    "slug": "compa"
+  },
+  {
+    "name": "Maki",
+    "platform": "ashby",
+    "slug": "maki"
+  },
+  {
+    "name": "HeyMilo",
+    "platform": "ashby",
+    "slug": "heymilo"
+  },
+  {
+    "name": "Juicebox",
+    "platform": "ashby",
+    "slug": "juicebox"
+  },
+  {
+    "name": "Paraform",
+    "platform": "ashby",
+    "slug": "paraform"
+  },
+  {
+    "name": "Rilla",
+    "platform": "ashby",
+    "slug": "rilla"
+  },
+  {
+    "name": "TurboPuffer",
+    "platform": "ashby",
+    "slug": "turbopuffer"
+  },
+  {
+    "name": "Vectara",
+    "platform": "greenhouse",
+    "slug": "vectara"
+  },
+  {
+    "name": "Reka",
+    "platform": "ashby",
+    "slug": "reka"
+  },
+  {
+    "name": "You.com",
+    "platform": "greenhouse",
+    "slug": "youcom"
+  },
+  {
+    "name": "Linkup",
+    "platform": "ashby",
+    "slug": "linkup"
+  },
+  {
+    "name": "Cleric",
+    "platform": "ashby",
+    "slug": "cleric"
+  },
+  {
+    "name": "Traversal",
+    "platform": "ashby",
+    "slug": "traversal"
+  },
+  {
+    "name": "Lago",
+    "platform": "ashby",
+    "slug": "lago"
+  },
+  {
+    "name": "Revenium",
+    "platform": "ashby",
+    "slug": "revenium"
+  },
+  {
+    "name": "Eleos Health",
+    "platform": "greenhouse",
+    "slug": "eleoshealth"
+  },
+  {
+    "name": "Crosby",
+    "platform": "ashby",
+    "slug": "crosby"
+  },
+  {
+    "name": "Kentik",
+    "platform": "greenhouse",
+    "slug": "kentik"
+  },
+  {
+    "name": "MaintainX",
+    "platform": "greenhouse",
+    "slug": "maintainx"
+  },
+  {
+    "name": "Qventus",
+    "platform": "greenhouse",
+    "slug": "qventus"
+  },
+  {
+    "name": "Crux",
+    "platform": "ashby",
+    "slug": "cruxclimate"
+  },
+  {
+    "name": "Camus Energy",
+    "platform": "greenhouse",
+    "slug": "camusenergy"
+  },
+  {
+    "name": "Magical",
+    "platform": "ashby",
+    "slug": "magical"
+  },
+  {
+    "name": "Kojo",
+    "platform": "ashby",
+    "slug": "kojo"
+  },
+  {
+    "name": "Adaptive",
+    "platform": "ashby",
+    "slug": "adaptive"
+  },
+  {
+    "name": "Agave",
+    "platform": "ashby",
+    "slug": "agave"
+  },
+  {
+    "name": "OpenSpace",
+    "platform": "greenhouse",
+    "slug": "openspace"
+  },
+  {
+    "name": "Roofr",
+    "platform": "greenhouse",
+    "slug": "roofr"
+  },
+  {
+    "name": "Artie",
+    "platform": "ashby",
+    "slug": "artie"
+  },
+  {
+    "name": "Nayya",
+    "platform": "greenhouse",
+    "slug": "nayya"
+  },
+  {
+    "name": "Heron Data",
+    "platform": "ashby",
+    "slug": "herondata"
+  },
+  {
+    "name": "Zest AI",
+    "platform": "greenhouse",
+    "slug": "zestai"
+  },
+  {
+    "name": "Sieve",
+    "platform": "ashby",
+    "slug": "sieve"
+  },
+  {
+    "name": "Dosu",
+    "platform": "ashby",
+    "slug": "dosu"
+  },
+  {
+    "name": "DevRev",
+    "platform": "greenhouse",
+    "slug": "devrev"
+  },
+  {
+    "name": "Tonic AI",
+    "platform": "ashby",
+    "slug": "tonicai"
+  },
+  {
+    "name": "Kubera Health",
+    "platform": "ashby",
+    "slug": "kubera-health"
+  },
+  {
+    "name": "Hopper",
+    "platform": "ashby",
+    "slug": "hopper"
+  },
+  {
+    "name": "Chroma",
+    "platform": "ashby",
+    "slug": "trychroma"
+  },
+  {
+    "name": "Coactive",
+    "platform": "greenhouse",
+    "slug": "coactive"
+  },
+  {
+    "name": "Truework",
+    "platform": "greenhouse",
+    "slug": "truework"
+  },
+  {
+    "name": "SmithRx",
+    "platform": "greenhouse",
+    "slug": "smithrx"
+  },
+  {
+    "name": "Fay",
+    "platform": "greenhouse",
+    "slug": "fay"
+  },
+  {
+    "name": "ASG",
+    "platform": "greenhouse",
+    "slug": "asg"
+  },
+  {
+    "name": "Actian",
+    "platform": "lever",
+    "slug": "actian"
+  },
+  {
+    "name": "WorkWave",
+    "platform": "lever",
+    "slug": "workwave"
+  },
+  {
+    "name": "HHAeXchange",
+    "platform": "lever",
+    "slug": "hhaexchange"
+  },
+  {
+    "name": "Epoch AI",
+    "platform": "lever",
+    "slug": "epoch-ai"
+  },
+  {
+    "name": "Breeze",
+    "platform": "greenhouse",
+    "slug": "breezecash"
+  },
+  {
+    "name": "Gravity Payments",
+    "platform": "greenhouse",
+    "slug": "gravitypayments17"
+  },
+  {
+    "name": "Human Interest",
+    "platform": "greenhouse",
+    "slug": "humaninterest"
+  },
+  {
+    "name": "Alt",
+    "platform": "greenhouse",
+    "slug": "alt"
+  },
+  {
+    "name": "Vectra AI",
+    "platform": "greenhouse",
+    "slug": "vectranetworks"
+  },
+  {
+    "name": "Coast",
+    "platform": "greenhouse",
+    "slug": "coast"
+  },
+  {
+    "name": "Qualified Health",
+    "platform": "ashby",
+    "slug": "qualified-health-pbc"
+  },
+  {
+    "name": "Develop Health",
+    "platform": "ashby",
+    "slug": "develop-health"
+  },
+  {
+    "name": "Tessera Labs",
+    "platform": "ashby",
+    "slug": "tessera-labs"
+  },
+  {
+    "name": "August",
+    "platform": "ashby",
+    "slug": "august"
+  },
+  {
+    "name": "Granted",
+    "platform": "ashby",
+    "slug": "granted"
+  },
+  {
+    "name": "Aktos",
+    "platform": "greenhouse",
+    "slug": "applytoaktos"
+  },
+  {
+    "name": "Nira Energy",
+    "platform": "greenhouse",
+    "slug": "niraenergy"
+  },
+  {
+    "name": "Equilibrium Energy",
+    "platform": "greenhouse",
+    "slug": "equilibriumenergy"
+  },
+  {
+    "name": "Process Street",
+    "platform": "greenhouse",
+    "slug": "processstreet"
+  },
+  {
+    "name": "NMI",
+    "platform": "greenhouse",
+    "slug": "nmi"
+  },
+  {
+    "name": "Gynger",
+    "platform": "lever",
+    "slug": "gynger"
+  },
+  {
+    "name": "Lightning AI",
+    "platform": "greenhouse",
+    "slug": "lightningai"
+  },
+  {
+    "name": "Orbital",
+    "platform": "ashby",
+    "slug": "orbital"
+  },
+  {
+    "name": "Splitero",
+    "platform": "greenhouse",
+    "slug": "splitero"
+  },
+  {
+    "name": "Known",
+    "platform": "ashby",
+    "slug": "known"
+  },
+  {
+    "name": "Kled AI",
+    "platform": "ashby",
+    "slug": "kled-ai"
+  },
+  {
+    "name": "10a Labs",
+    "platform": "greenhouse",
+    "slug": "10alabs"
+  },
+  {
+    "name": "Scout AI",
+    "platform": "greenhouse",
+    "slug": "scoutai"
+  },
+  {
+    "name": "Northslope Technologies",
+    "platform": "ashby",
+    "slug": "northslope-technologies"
+  },
+  {
+    "name": "Variance",
+    "platform": "ashby",
+    "slug": "intrinsic-safety"
+  },
+  {
+    "name": "Tenex",
+    "platform": "ashby",
+    "slug": "tenexlabs"
+  },
+  {
+    "name": "Promise",
+    "platform": "ashby",
+    "slug": "Promise"
+  },
+  {
+    "name": "webAI",
+    "platform": "ashby",
+    "slug": "webai"
+  },
+  {
+    "name": "HappyRobot",
+    "platform": "ashby",
+    "slug": "happyrobot.ai"
+  },
+  {
+    "name": "Instead",
+    "platform": "greenhouse",
+    "slug": "instead"
+  },
+  {
+    "name": "Kikoff",
+    "platform": "greenhouse",
+    "slug": "kikoff"
+  },
+  {
+    "name": "Monstro",
+    "platform": "greenhouse",
+    "slug": "monstro"
+  },
+  {
+    "name": "Wholesail",
+    "platform": "greenhouse",
+    "slug": "wholesail"
+  },
+  {
+    "name": "Engine",
+    "platform": "greenhouse",
+    "slug": "engine"
+  },
+  {
+    "name": "Brain Co",
+    "platform": "ashby",
+    "slug": "brainco"
+  },
+  {
+    "name": "Eloquent AI",
+    "platform": "ashby",
+    "slug": "eloquentai"
+  },
+  {
+    "name": "Doe",
+    "platform": "ashby",
+    "slug": "doe"
+  },
+  {
+    "name": "LeafLink",
+    "platform": "greenhouse",
+    "slug": "leaflink"
+  },
+  {
+    "name": "Tenex.AI",
+    "platform": "ashby",
+    "slug": "tenex"
   }
 ]

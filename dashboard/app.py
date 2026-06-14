@@ -186,12 +186,14 @@ def pipeline_status():
 @app.get("/api/stats")
 def stats():
     conn = get_db()
+    # rejected=1 is a personal "I passed on this" flag; exclude from the
+    # actionable counts so the headline numbers match the default (hide-rejected) view.
     return {
         "total":    conn.execute("SELECT COUNT(*) FROM jobs WHERE removed=0").fetchone()[0],
-        "queued":   conn.execute("SELECT COUNT(*) FROM jobs WHERE status='queued' AND removed=0").fetchone()[0],
+        "queued":   conn.execute("SELECT COUNT(*) FROM jobs WHERE status='queued' AND removed=0 AND rejected=0").fetchone()[0],
         "applied":  conn.execute("SELECT COUNT(*) FROM jobs WHERE status='applied'").fetchone()[0],
         "rejected": conn.execute("SELECT COUNT(*) FROM jobs WHERE status='rejected' AND removed=0").fetchone()[0],
-        "new":      conn.execute("SELECT COUNT(*) FROM jobs WHERE status='new' AND removed=0").fetchone()[0],
+        "new":      conn.execute("SELECT COUNT(*) FROM jobs WHERE status='new' AND removed=0 AND rejected=0").fetchone()[0],
     }
 
 
@@ -266,11 +268,18 @@ def get_jobs(
     query += f" {order} LIMIT 200"
     rows = conn.execute(query, params).fetchall()
 
+    # Map of company -> titles already applied to (to flag duplicate-company applies)
+    applied_by_company: dict[str, list[str]] = {}
+    for ar in conn.execute("SELECT company, title FROM jobs WHERE status='applied'").fetchall():
+        applied_by_company.setdefault(ar["company"], []).append(ar["title"])
+
     jobs = []
     for r in rows:
         j = dict(r)
         j["strengths"] = json.loads(j.get("strengths") or "[]")[:3]
         j["missing_skills"] = json.loads(j.get("missing_skills") or "[]")[:3]
+        # Other roles already applied to at this company (excludes this exact role)
+        j["also_applied"] = [t for t in applied_by_company.get(j["company"], []) if t != j["title"]]
         # Check if PDFs exist
         import re
         def slugify(t):
