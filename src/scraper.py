@@ -174,6 +174,38 @@ async def fetch_greenhouse_jobs(slug: str) -> list[dict[str, Any]]:
     return jobs
 
 
+def _salary_from_lever_range(rng: Any) -> tuple[int | None, int | None, str | None]:
+    """Parse Lever's structured salaryRange dict into (min, max, raw).
+
+    Lever shape: {"min": 160000, "max": 180000, "currency": "USD",
+    "interval": "per-year-salary"}. Only trust annual USD ranges — hourly or
+    non-USD values would otherwise look like absurd salaries.
+    """
+    if not isinstance(rng, dict):
+        return None, None, None
+    currency = (rng.get("currency") or "USD").upper()
+    interval = (rng.get("interval") or "").lower()
+    if currency != "USD" or ("year" not in interval and interval):
+        return None, None, None
+    try:
+        lo = int(rng["min"]) if rng.get("min") is not None else None
+        hi = int(rng["max"]) if rng.get("max") is not None else None
+    except (ValueError, TypeError):
+        return None, None, None
+    if not lo and not hi:
+        return None, None, None
+    # Guard against hourly values mislabeled as annual (e.g. max of 80).
+    if (hi or lo or 0) < 1000:
+        return None, None, None
+    if lo and hi:
+        raw = f"${lo:,} – ${hi:,}"
+    elif hi:
+        raw = f"Up to ${hi:,}"
+    else:
+        raw = f"From ${lo:,}"
+    return lo, hi, raw
+
+
 async def fetch_lever_jobs(slug: str) -> list[dict[str, Any]]:
     """Fetch jobs from a Lever job board. Returns list of {title, url, description}."""
     url = LEVER_URL.format(slug=slug)
@@ -213,7 +245,12 @@ async def fetch_lever_jobs(slug: str) -> list[dict[str, Any]]:
             description_parts.append(additional.strip())
 
         description = "\n".join(description_parts).strip()
-        sal_min, sal_max, sal_raw = _extract_salary(description)
+
+        # Prefer Lever's structured salaryRange (many boards put pay ONLY here,
+        # not in the description body); fall back to scraping the text.
+        sal_min, sal_max, sal_raw = _salary_from_lever_range(posting.get("salaryRange"))
+        if sal_min is None and sal_max is None:
+            sal_min, sal_max, sal_raw = _extract_salary(description)
 
         jobs.append(
             {
