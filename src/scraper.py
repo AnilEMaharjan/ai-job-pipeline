@@ -33,6 +33,11 @@ def _extract_salary(text: str) -> tuple[int | None, int | None, str | None]:
     if not text:
         return None, None, None
 
+    # Some boards (e.g. Greenhouse pay-range divs) double-escape the em/en dash as
+    # &amp;mdash;, so it survives one unescape + tag-stripping as the literal text
+    # "&mdash;". Normalize those entity dashes to a plain hyphen so ranges still match.
+    text = re.sub(r'&(?:mdash|ndash|#8212|#8211|#x201[34]);', '-', text, flags=re.IGNORECASE)
+
     def parse_num(s: str) -> int:
         s = s.replace(",", "").strip().lower()
         if s.endswith("k"):
