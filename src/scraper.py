@@ -170,12 +170,13 @@ async def fetch_greenhouse_jobs(slug: str) -> list[dict[str, Any]]:
 
         sal_min, sal_max, sal_raw = _extract_salary(description)
         # Greenhouse reports absolute_url as the company's custom careers domain,
-        # which often 404s when that site is misconfigured. The canonical
-        # job-boards.greenhouse.io URL always resolves, so prefer it when we have
-        # the job id; fall back to absolute_url only if the id is missing.
+        # which often 404s when that site is misconfigured (e.g. Thatch), and the
+        # job-boards.greenhouse.io URL just 302-redirects back to that dead page.
+        # The embed job_app form always resolves regardless of custom-domain setup,
+        # so use it when we have the job id; fall back to absolute_url otherwise.
         job_id = job.get("id")
         url = (
-            f"https://job-boards.greenhouse.io/{slug}/jobs/{job_id}"
+            f"https://boards.greenhouse.io/embed/job_app?for={slug}&token={job_id}"
             if job_id else job.get("absolute_url", "").strip()
         )
         jobs.append(
