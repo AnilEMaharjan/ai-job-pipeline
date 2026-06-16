@@ -160,7 +160,11 @@ async def fetch_greenhouse_jobs(slug: str) -> list[dict[str, Any]]:
         if "remote" not in location.lower() or not _is_us_location(location):
             continue
 
-        content = job.get("content", "") or ""
+        # Some boards double-escape their HTML (tags arrive as &lt;div&gt;), so
+        # unescape BEFORE stripping tags, then unescape again to clean any
+        # remaining entities. Stripping first would leave escaped tags in the text
+        # and break both salary parsing and the description sent to the scorer.
+        content = html.unescape(job.get("content", "") or "")
         description = re.sub(r"<[^>]+>", " ", content)
         description = html.unescape(re.sub(r"\s{2,}", " ", description).strip())
 
