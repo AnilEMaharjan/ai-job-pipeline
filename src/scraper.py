@@ -165,10 +165,19 @@ async def fetch_greenhouse_jobs(slug: str) -> list[dict[str, Any]]:
         description = html.unescape(re.sub(r"\s{2,}", " ", description).strip())
 
         sal_min, sal_max, sal_raw = _extract_salary(description)
+        # Greenhouse reports absolute_url as the company's custom careers domain,
+        # which often 404s when that site is misconfigured. The canonical
+        # job-boards.greenhouse.io URL always resolves, so prefer it when we have
+        # the job id; fall back to absolute_url only if the id is missing.
+        job_id = job.get("id")
+        url = (
+            f"https://job-boards.greenhouse.io/{slug}/jobs/{job_id}"
+            if job_id else job.get("absolute_url", "").strip()
+        )
         jobs.append(
             {
                 "title": job.get("title", "").strip(),
-                "url": job.get("absolute_url", "").strip(),
+                "url": url,
                 "location": location,
                 "description": description,
                 "salary_min": sal_min,
