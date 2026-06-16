@@ -62,6 +62,7 @@ def _tex(s: str) -> str:
 def _skill_label(key: str) -> str:
     labels = {
         "languages_and_development": "Languages \\& Development",
+        "ai_tooling":                "AI Tooling",
         "orchestration_and_etl":     "Orchestration \\& ETL",
         "data_warehouses":           "Data Warehouses",
         "visualization":             "Visualization",
