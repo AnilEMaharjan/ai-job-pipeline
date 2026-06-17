@@ -26,7 +26,7 @@
   .spinner { display: inline-block; animation: spin 1s linear infinite; }
 
   /* Stats bar */
-  .stats { display: flex; gap: 12px; padding: 16px 24px; background: #fff !important; border-bottom: 1px solid #e5e5e5; }
+  .stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; padding: 16px 24px; background: #fff !important; border-bottom: 1px solid #e5e5e5; }
   .stat { background: #f9f9f9; border: 1px solid #e5e5e5; border-radius: 8px; padding: 10px 16px; text-align: center; min-width: 90px; }
   .stat .num { font-size: 22px; font-weight: 700; color: #1a1a1a; }
   .stat .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
@@ -75,7 +75,26 @@
   .category-tag { background: #f0f4ff; color: #3b5bdb; font-size: 11px; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
   .platform-tag { background: #f3f4f6; color: #6b7280; font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 500; text-transform: capitalize; }
   .conn-tag { background: #dcfce7; color: #15803d; font-size: 11px; padding: 1px 7px; border-radius: 4px; font-weight: 600; cursor: default; }
-  .applied-here-tag { background: #fef3c7; color: #92400e; font-size: 11px; padding: 1px 7px; border-radius: 4px; font-weight: 600; cursor: default; }
+  .applied-here-tag { background: #fef3c7; color: #92400e; font-size: 11px; padding: 1px 7px; border-radius: 4px; font-weight: 600; cursor: pointer; }
+  .applied-here-tag:hover { background: #fde68a; text-decoration: underline; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+  .modal-box { background: #fff; border-radius: 10px; padding: 20px 24px; max-width: 460px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
+  .modal-title { font-size: 15px; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; }
+  .modal-list { margin: 0 0 12px; padding-left: 18px; }
+  .modal-list li { margin: 6px 0; font-size: 14px; }
+  .modal-list a { color: #2563eb; text-decoration: none; }
+  .modal-list a:hover { text-decoration: underline; }
+  .modal-hint { font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 10px; margin-top: 12px; }
+  .cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cmp-table th { text-align: left; color: #888; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; padding: 4px 8px; border-bottom: 1px solid #e5e5e5; }
+  .cmp-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  .cmp-table a { color: #2563eb; text-decoration: none; }
+  .cmp-table a:hover { text-decoration: underline; }
+  .cmp-table tr.cmp-cur { background: #eff6ff; }
+  .modal-rec { font-size: 13px; font-weight: 500; border-radius: 6px; padding: 10px 12px; margin-top: 14px; }
+  .modal-rec.rec-go { background: #dcfce7; color: #166534; }
+  .modal-rec.rec-stop { background: #fee2e2; color: #991b1b; }
+  .modal-rec.rec-maybe { background: #fef9c3; color: #854d0e; }
   .job-card.has-conn { border-left: 3px solid #22c55e; }
   .detail-col.conns h4 { color: #15803d; }
   .detail-col.conns a { color: #1d4ed8; text-decoration: none; }
@@ -139,6 +158,11 @@
   <div class="stat"><div class="num" id="stat-new">—</div><div class="label">New</div></div>
   <div class="stat"><div class="num" id="stat-rejected">—</div><div class="label">Scored out</div></div>
   <div class="stat"><div class="num" id="stat-total">—</div><div class="label">Total</div></div>
+  <div class="stat"><div class="num" id="stat-companies">—</div><div class="label">Companies</div></div>
+  <div class="stat"><div class="num" id="stat-connections">—</div><div class="label">🤝 Connections</div></div>
+  <div class="stat" title="Median of the MIDPOINT of the posted salary band, across applied jobs that listed a salary"><div class="num" id="stat-median-mid">—</div><div class="label">Median Applied Pay (midpoint)</div></div>
+  <div class="stat" title="Median of the TOP of the posted salary band, across applied jobs that listed a salary"><div class="num" id="stat-median-pay">—</div><div class="label">Median Applied Pay (band top)</div></div>
+  <div class="stat"><div class="num" id="stat-top-pay">—</div><div class="label">Top Applied Pay</div></div>
 </div>
 
 <div class="filters">
@@ -254,6 +278,12 @@ async function loadStats() {
   document.getElementById('stat-new').textContent = fmt(s.new);
   document.getElementById('stat-rejected').textContent = fmt(s.rejected);
   document.getElementById('stat-total').textContent = fmt(s.total);
+  document.getElementById('stat-companies').textContent = fmt(s.companies);
+  document.getElementById('stat-connections').textContent = fmt(s.connections);
+  const money = (n) => !n ? '—' : n >= 1000000 ? '$' + (n / 1000000).toFixed(1) + 'M' : '$' + Math.round(n / 1000) + 'k';
+  document.getElementById('stat-median-mid').textContent = money(s.median_applied_mid);
+  document.getElementById('stat-median-pay').textContent = money(s.median_applied_pay);
+  document.getElementById('stat-top-pay').textContent = money(s.top_pay);
   document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
 }
 
@@ -294,6 +324,62 @@ function updateStatusLabel() {
   else t.textContent = checked.length + ' selected';
 }
 function onStatusChange() { updateStatusLabel(); loadJobs(); }
+// Clicking an "applied here" pill: pop up a small modal listing just the roles
+// you already applied to at that company, each linking to the posting. Keeps the
+// original job card in place behind the overlay so you don't lose your spot.
+// Rough seniority level from a job title, for comparing the role you're viewing
+// against ones you already applied to at the same company.
+function seniorityLevel(title) {
+  const t = (title || '').toLowerCase();
+  if (/\b(vp|vice president|head of|director|principal|distinguished)\b/.test(t)) return { n: 5, label: 'Director/Principal' };
+  if (/\bstaff\b/.test(t)) return { n: 4, label: 'Staff' };
+  if (/\b(senior|sr\.?|lead|manager)\b/.test(t)) return { n: 3, label: 'Senior/Lead' };
+  if (/\b(associate|junior|jr\.?|intern|\bi\b)\b/.test(t)) return { n: 1, label: 'Junior' };
+  return { n: 2, label: 'Mid' };
+}
+function payStr(a) {
+  const k = n => '$' + Math.round(n/1000) + 'k';
+  if (a.salary_min && a.salary_max) return k(a.salary_min) + '–' + k(a.salary_max);
+  if (a.salary_max) return 'up to ' + k(a.salary_max);
+  return '—';
+}
+function showAppliedModal(company, appliedJson, curTitle, curScore, curMin, curMax) {
+  let list = [];
+  try { list = JSON.parse(appliedJson); } catch (e) {}
+  const cur = { title: curTitle, score: +curScore || null, salary_min: +curMin || null, salary_max: +curMax || null };
+  const curLvl = seniorityLevel(cur.title);
+  const maxApplied = list.reduce((m, a) => Math.max(m, seniorityLevel(a.title).n), 0);
+
+  // Recommendation: compare this role's seniority to the most senior one you applied to.
+  let rec, recClass;
+  if (curLvl.n > maxApplied) { rec = `This role looks more senior (${curLvl.label}) than what you already applied to here. Worth applying.`; recClass = 'rec-go'; }
+  else if (curLvl.n < maxApplied) { rec = `You already applied to a more senior role here. This one is a step down, so it may not add much. Consider focusing on the senior application.`; recClass = 'rec-stop'; }
+  else { rec = `Similar level to what you applied to. Applying to both is reasonable if the teams or focus areas differ. Skip if it is effectively the same role.`; recClass = 'rec-maybe'; }
+
+  const row = (a, isCur) => `
+    <tr class="${isCur ? 'cmp-cur' : ''}">
+      <td>${isCur ? '<strong>This role</strong><br>' : ''}${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.title)}</a>` : esc(a.title)}</td>
+      <td>${seniorityLevel(a.title).label}</td>
+      <td>${a.score != null ? a.score : '—'}</td>
+      <td>${payStr(a)}</td>
+    </tr>`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title">Compare roles at ${esc(company)}</div>
+      <table class="cmp-table">
+        <thead><tr><th>Role</th><th>Level</th><th>Score</th><th>Pay (band top)</th></tr></thead>
+        <tbody>${row(cur, true)}${list.map(a => row(a, false)).join('')}</tbody>
+      </table>
+      <div class="modal-rec ${recClass}">${rec}</div>
+      <div class="modal-hint">Level is inferred from the title and is approximate. Esc or click outside to close.</div>
+    </div>`;
+  overlay.onclick = () => overlay.remove();
+  document.addEventListener('keydown', function esc2(e){ if(e.key==='Escape'){ overlay.remove(); document.removeEventListener('keydown', esc2);} });
+  document.body.appendChild(overlay);
+}
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('filter-status');
   if (menu && !menu.parentElement.contains(e.target)) menu.classList.remove('open');
@@ -366,7 +452,7 @@ async function loadJobs() {
             <div class="job-meta">
               <span><strong>${esc(j.company)}</strong></span>
               ${conns.length ? `<span class="conn-tag" title="${esc(conns.map(c => c.name + ' — ' + c.title).join('\\n'))}">🤝 ${conns.length} connection${conns.length > 1 ? 's' : ''}</span>` : ''}
-              ${(j.also_applied && j.also_applied.length) ? `<span class="applied-here-tag" title="${esc('Already applied at ' + j.company + ':\\n' + j.also_applied.join('\\n'))}">📋 applied here (${j.also_applied.length})</span>` : ''}
+              ${(j.also_applied && j.also_applied.length) ? `<span class="applied-here-tag" data-company="${esc(j.company)}" data-applied="${esc(JSON.stringify(j.also_applied))}" data-title="${esc(j.title)}" data-score="${j.score ?? ''}" data-min="${j.salary_min ?? ''}" data-max="${j.salary_max ?? ''}" onclick="showAppliedModal(this.dataset.company, this.dataset.applied, this.dataset.title, this.dataset.score, this.dataset.min, this.dataset.max)" title="Compare this role to the ${j.also_applied.length} you applied to at ${esc(j.company)}">📋 applied here (${j.also_applied.length})</span>` : ''}
               ${j.category ? `<span class="category-tag">${esc(j.category)}</span>` : ''}
               ${j.platform ? `<span class="platform-tag">${esc(j.platform)}</span>` : ''}
               ${j.location ? `<span>📍 ${esc(j.location)}</span>` : ''}

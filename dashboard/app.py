@@ -46,7 +46,11 @@ async def _csrf_guard(request: Request, call_next):
             ok = (urlparse(origin).hostname in _LOCAL_HOSTS) if origin else True
         if not ok:
             return JSONResponse({"detail": "cross-site request blocked"}, status_code=403)
-    return await call_next(request)
+    response = await call_next(request)
+    # This is a single-user local tool whose data and UI change constantly; never
+    # let the browser serve a stale page or API response from cache.
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    return response
 
 # Referral map (LinkedIn connections at target companies), keyed by company name.
 _referral_cache: dict = {"mtime": None, "data": {}}
@@ -208,12 +212,65 @@ def stats():
     conn = get_db()
     # rejected=1 is a personal "I passed on this" flag; exclude from the
     # actionable counts so the headline numbers match the default (hide-rejected) view.
+    def one(sql, *args):
+        row = conn.execute(sql, args).fetchone()
+        return row[0] if row and row[0] is not None else 0
+
+    # Total companies tracked (from the source list, not just ones that returned jobs).
+    companies_tracked = 0
+    try:
+        companies_tracked = len(json.loads(
+            (PIPELINE_DIR / "config" / "companies.json").read_text()
+        ))
+    except Exception:
+        pass
+
+    # Companies you have at least one LinkedIn connection at (that also have a live job).
+    referrals = load_referrals()
+    conn_companies = 0
+    if referrals:
+        live = {r[0] for r in conn.execute(
+            "SELECT DISTINCT company FROM jobs WHERE removed=0 AND rejected=0"
+        ).fetchall()}
+        conn_companies = sum(1 for c in referrals if c in live)
+
+    # Pay stats over jobs you've actually applied to (what you're really pursuing).
+    top_pay = one(
+        "SELECT MAX(salary_max) FROM jobs WHERE status='applied' AND salary_max IS NOT NULL"
+    )
+    # Median of the TOP of each posted band (labeled as such in the UI).
+    median_applied_pay = one(
+        """SELECT salary_max FROM jobs
+           WHERE status='applied' AND salary_max IS NOT NULL
+           ORDER BY salary_max
+           LIMIT 1 OFFSET (
+             SELECT COUNT(*)/2 FROM jobs
+             WHERE status='applied' AND salary_max IS NOT NULL
+           )"""
+    )
+    # Median of the MIDPOINT of each posted band (or the single bound we have).
+    _mid = "(COALESCE(salary_min, salary_max) + salary_max) / 2.0"
+    median_applied_mid = one(
+        f"""SELECT {_mid} AS mid FROM jobs
+           WHERE status='applied' AND salary_max IS NOT NULL
+           ORDER BY mid
+           LIMIT 1 OFFSET (
+             SELECT COUNT(*)/2 FROM jobs
+             WHERE status='applied' AND salary_max IS NOT NULL
+           )"""
+    )
+
     return {
-        "total":    conn.execute("SELECT COUNT(*) FROM jobs WHERE removed=0").fetchone()[0],
-        "queued":   conn.execute("SELECT COUNT(*) FROM jobs WHERE status='queued' AND removed=0 AND rejected=0").fetchone()[0],
-        "applied":  conn.execute("SELECT COUNT(*) FROM jobs WHERE status='applied'").fetchone()[0],
-        "rejected": conn.execute("SELECT COUNT(*) FROM jobs WHERE status='rejected' AND removed=0").fetchone()[0],
-        "new":      conn.execute("SELECT COUNT(*) FROM jobs WHERE status='new' AND removed=0 AND rejected=0").fetchone()[0],
+        "total":    one("SELECT COUNT(*) FROM jobs WHERE removed=0"),
+        "queued":   one("SELECT COUNT(*) FROM jobs WHERE status='queued' AND removed=0 AND rejected=0"),
+        "applied":  one("SELECT COUNT(*) FROM jobs WHERE status='applied'"),
+        "rejected": one("SELECT COUNT(*) FROM jobs WHERE status='rejected' AND removed=0"),
+        "new":      one("SELECT COUNT(*) FROM jobs WHERE status='new' AND removed=0 AND rejected=0"),
+        "companies": companies_tracked,
+        "connections": conn_companies,
+        "top_pay": top_pay,
+        "median_applied_pay": median_applied_pay,
+        "median_applied_mid": median_applied_mid,
     }
 
 
@@ -288,10 +345,16 @@ def get_jobs(
     query += f" {order} LIMIT 200"
     rows = conn.execute(query, params).fetchall()
 
-    # Map of company -> titles already applied to (to flag duplicate-company applies)
-    applied_by_company: dict[str, list[str]] = {}
-    for ar in conn.execute("SELECT company, title FROM jobs WHERE status='applied'").fetchall():
-        applied_by_company.setdefault(ar["company"], []).append(ar["title"])
+    # Map of company -> roles already applied to (to flag duplicate-company applies
+    # and let the UI compare seniority / score / pay against the role being viewed).
+    applied_by_company: dict[str, list[dict]] = {}
+    for ar in conn.execute(
+        "SELECT company, title, url, score, salary_min, salary_max FROM jobs WHERE status='applied'"
+    ).fetchall():
+        applied_by_company.setdefault(ar["company"], []).append({
+            "title": ar["title"], "url": ar["url"], "score": ar["score"],
+            "salary_min": ar["salary_min"], "salary_max": ar["salary_max"],
+        })
 
     jobs = []
     for r in rows:
@@ -299,7 +362,9 @@ def get_jobs(
         j["strengths"] = json.loads(j.get("strengths") or "[]")[:3]
         j["missing_skills"] = json.loads(j.get("missing_skills") or "[]")[:3]
         # Other roles already applied to at this company (excludes this exact role)
-        j["also_applied"] = [t for t in applied_by_company.get(j["company"], []) if t != j["title"]]
+        j["also_applied"] = [
+            a for a in applied_by_company.get(j["company"], []) if a["title"] != j["title"]
+        ]
         # Check if PDFs exist
         import re
         def slugify(t):
