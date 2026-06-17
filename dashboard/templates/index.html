@@ -31,6 +31,8 @@
   .stat .num { font-size: 22px; font-weight: 700; color: #1a1a1a; }
   .stat .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
   .stat.highlight .num { color: #2563eb; }
+  .stat.clickable { cursor: pointer; transition: border-color 0.12s; }
+  .stat.clickable:hover { border-color: #2563eb; }
 
   /* Filters */
   .filters { padding: 12px 24px; background: #fff !important; border-bottom: 1px solid #e5e5e5; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
@@ -153,10 +155,10 @@
 </div>
 
 <div class="stats" id="stats">
-  <div class="stat highlight"><div class="num" id="stat-queued">—</div><div class="label">Queued</div></div>
-  <div class="stat"><div class="num" id="stat-applied">—</div><div class="label">Applied</div></div>
-  <div class="stat"><div class="num" id="stat-new">—</div><div class="label">New</div></div>
-  <div class="stat"><div class="num" id="stat-rejected">—</div><div class="label">Scored out</div></div>
+  <div class="stat highlight clickable" onclick="resetToStatus('queued')" title="Back to a clean queue view (clears all filters)"><div class="num" id="stat-queued">—</div><div class="label">Queued</div></div>
+  <div class="stat clickable" onclick="resetToStatus('applied')" title="Show applied jobs (clears all filters)"><div class="num" id="stat-applied">—</div><div class="label">Applied</div></div>
+  <div class="stat clickable" onclick="resetToStatus('new')" title="Show new jobs (clears all filters)"><div class="num" id="stat-new">—</div><div class="label">New</div></div>
+  <div class="stat clickable" onclick="resetToStatus('rejected')" title="Show scored-out jobs (clears all filters)"><div class="num" id="stat-rejected">—</div><div class="label">Scored out</div></div>
   <div class="stat"><div class="num" id="stat-total">—</div><div class="label">Total</div></div>
   <div class="stat"><div class="num" id="stat-companies">—</div><div class="label">Companies</div></div>
   <div class="stat"><div class="num" id="stat-connections">—</div><div class="label">🤝 Connections</div></div>
@@ -324,6 +326,22 @@ function updateStatusLabel() {
   else t.textContent = checked.length + ' selected';
 }
 function onStatusChange() { updateStatusLabel(); loadJobs(); }
+// Clicking a status stat card jumps to just that status with all other filters
+// cleared, e.g. clicking "Queued" returns to a clean default queue view.
+function resetToStatus(status) {
+  document.querySelectorAll('#filter-status input').forEach(c => { c.checked = (c.value === status); });
+  document.getElementById('filter-category').value = '';
+  document.getElementById('filter-platform').value = '';
+  document.getElementById('filter-connection').checked = false;
+  document.getElementById('filter-sort').value = 'score';
+  document.getElementById('filter-search').value = '';
+  document.getElementById('filter-salary').value = '0';
+  document.getElementById('filter-score-min').value = '';
+  document.getElementById('filter-score-max').value = '';
+  document.getElementById('filter-rejected').value = (status === 'rejected') ? 'all' : 'hide';
+  updateStatusLabel();
+  loadJobs();
+}
 // Clicking an "applied here" pill: pop up a small modal listing just the roles
 // you already applied to at that company, each linking to the posting. Keeps the
 // original job card in place behind the overlay so you don't lose your spot.
