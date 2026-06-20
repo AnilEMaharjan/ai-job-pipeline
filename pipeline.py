@@ -251,9 +251,16 @@ def score(limit):
 
     queued = 0
     rejected = 0
+    failed = 0
     for result in results:
         job_id = result["job_id"]
         if job_id is None:
+            continue
+        # Scoring failed (Claude down / unparseable). Leave the job UNSCORED
+        # (score stays NULL, status 'new') so the next score run retries it,
+        # rather than burying it as a score-0 reject.
+        if result.get("failed"):
+            failed += 1
             continue
         database.update_job_score(
             job_id=job_id,
@@ -268,11 +275,14 @@ def score(limit):
         else:
             rejected += 1
 
-    console.print(
+    msg = (
         f"\n[bold green]Done![/bold green] "
         f"[green]{queued}[/green] jobs queued, "
         f"[red]{rejected}[/red] below threshold."
     )
+    if failed:
+        msg += f" [yellow]{failed} failed to score (left unscored, will retry next run).[/yellow]"
+    console.print(msg)
 
 
 # ── generate ──────────────────────────────────────────────────────────────────

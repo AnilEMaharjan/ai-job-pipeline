@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import time
 from typing import Any
 
 import anthropic
@@ -133,8 +134,10 @@ def score_job(
             return json.loads(match.group())
         raise ValueError(f"No parseable JSON in response: {raw[:200]}")
 
-    # Retry up to 3 times on parse failure
+    # Retry on both parse failures AND transient API errors (Claude down,
+    # overloaded, rate limited, network blip) with a short backoff.
     last_err = None
+    result = None
     for attempt in range(3):
         try:
             result = _call_and_parse()
@@ -143,13 +146,23 @@ def score_job(
             last_err = e
             if attempt < 2:
                 print(f"    Parse attempt {attempt + 1} failed, retrying...")
-    else:
-        print(f"    All 3 parse attempts failed: {last_err}")
-        result = {
+        except Exception as e:  # API errors: overloaded, rate limit, connection
+            last_err = e
+            if attempt < 2:
+                print(f"    API call attempt {attempt + 1} failed ({type(e).__name__}), retrying...")
+                time.sleep(2 * (attempt + 1))
+
+    if result is None:
+        # All attempts failed. Flag as failed so the caller leaves the job
+        # UNSCORED (score stays NULL) and a later run retries it, rather than
+        # burying it as a score-0 reject.
+        print(f"    All 3 attempts failed: {last_err}")
+        return {
             "score": 0,
-            "missing": ["Unable to parse response"],
+            "missing": [],
             "strengths": [],
-            "summary": "Scoring failed — could not parse Claude response.",
+            "summary": "Scoring failed — will retry on next run.",
+            "failed": True,
         }
 
     return {
@@ -157,6 +170,7 @@ def score_job(
         "missing": result.get("missing", []),
         "strengths": result.get("strengths", []),
         "summary": result.get("summary", ""),
+        "failed": False,
     }
 
 
@@ -193,9 +207,10 @@ def score_jobs_batch(
                 {
                     "job_id": job.get("id"),
                     "score": 0,
-                    "missing": [str(exc)],
+                    "missing": [],
                     "strengths": [],
-                    "summary": "Scoring failed.",
+                    "summary": "Scoring failed — will retry on next run.",
+                    "failed": True,
                 }
             )
 
