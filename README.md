@@ -8,7 +8,7 @@ An end-to-end job search automation system: scrapes 1,000+ company job boards, s
 fetch  →  score  →  review (dashboard)  →  generate  →  apply
 ```
 
-1. **Fetch** — pulls remote US jobs from Greenhouse, Lever, Ashby, Recruitee, and Workable boards for every company in `config/companies.json` (async, ~1,100 companies in a few minutes). Extracts salary where available, detects hybrid/in-office postings, and archives stale listings.
+1. **Fetch** — pulls remote US jobs from Greenhouse, Lever, Ashby, Recruitee, Workable, and Rippling boards for every company in `config/companies.json` (async, ~1,100 companies in a few minutes). Extracts salary where available, detects hybrid/in-office postings, and archives stale listings.
 2. **Score** — a title/location pre-filter screens obvious mismatches, then Claude scores each remaining job 0–100 against your resume (prompt caching keeps cost low). Jobs at or above `SCORE_THRESHOLD` land in your queue with strengths, gaps, and a fit summary.
 3. **Review** — a FastAPI dashboard (`localhost:8766`) with multi-select status filters, score/salary ranges, full-text search, a personal reject flag, and 🤝 badges showing jobs at companies where you have LinkedIn connections.
 4. **Generate** — one click produces a role-tailored resume and a four-paragraph cover letter (leads with your strongest hook, bridges your top gap, bans em dashes and generic closers), rendered to PDF via LaTeX.

@@ -2,6 +2,7 @@
 
 import asyncio
 import html
+import json
 import re
 from typing import Any
 
@@ -453,6 +454,95 @@ async def fetch_workable_jobs(slug: str) -> list[dict[str, Any]]:
     return jobs
 
 
+def _rippling_find_items(node: Any) -> list[dict]:
+    """Recursively locate the job-postings list inside Rippling's __NEXT_DATA__.
+    Job items are dicts carrying both 'url' and 'locations' (distinguishes them
+    from the i18n translation dict, which also has a 'name' key)."""
+    if isinstance(node, dict):
+        for v in node.values():
+            found = _rippling_find_items(v)
+            if found:
+                return found
+    elif isinstance(node, list):
+        if node and isinstance(node[0], dict) and "url" in node[0] and "locations" in node[0]:
+            return node
+        for v in node:
+            found = _rippling_find_items(v)
+            if found:
+                return found
+    return []
+
+
+async def fetch_rippling_jobs(slug: str) -> list[dict[str, Any]]:
+    """Fetch jobs from a Rippling ATS board (ats.rippling.com/{slug}/jobs).
+
+    Rippling server-renders the job list into a __NEXT_DATA__ blob (title, url,
+    department, structured locations with countryCode + workplaceType), but the
+    full description is loaded client-side via an authed API we don't have. So we
+    filter on the structured location/workplace fields and synthesize a short
+    description; the real JD is always reachable via the job url. Only the SSR'd
+    first page is read (fine for the small boards we track)."""
+    url = f"https://ats.rippling.com/{slug}/jobs"
+    try:
+        async with httpx.AsyncClient(timeout=20.0, headers=HEADERS, follow_redirects=True) as client:
+            resp = await client.get(url)
+            if resp.status_code != 200:
+                print(f"  [rippling/{slug}] HTTP {resp.status_code} – skipping")
+                return []
+        m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', resp.text, re.S)
+        if not m:
+            return []
+        items = _rippling_find_items(json.loads(m.group(1)))
+    except (httpx.RequestError, json.JSONDecodeError, ValueError) as exc:
+        print(f"  [rippling/{slug}] {type(exc).__name__} – skipping")
+        return []
+
+    jobs = []
+    for it in items:
+        title = (it.get("name") or "").strip()
+        locs = it.get("locations") or []
+        # Keep only roles with a US location that are remote (or hybrid).
+        us_remote_locs = []
+        any_remote = "remote" in title.lower()
+        for L in locs:
+            cc = (L.get("countryCode") or "").upper()
+            country = (L.get("country") or "")
+            nm = (L.get("name") or "")
+            wt = (L.get("workplaceType") or "").upper()
+            is_us = cc in ("US", "USA") or country in ("United States", "USA", "US") or _is_us_location(nm)
+            is_remote = wt in ("REMOTE", "HYBRID") or "remote" in nm.lower()
+            if is_remote:
+                any_remote = True
+            if is_us and is_remote:
+                us_remote_locs.append(nm or "United States")
+        if not us_remote_locs and not (any_remote and any(
+            (L.get("countryCode") or "").upper() in ("US", "USA") for L in locs
+        )):
+            continue
+
+        location = "Remote – " + (us_remote_locs[0] if us_remote_locs else "United States")
+        dept = ((it.get("department") or {}).get("name") or "").strip()
+        # Synthesized description: enough for title pre-filter + remote/US gate;
+        # the scorer gets thinner context than other platforms, by necessity.
+        description = (
+            f"{title}. {('Team: ' + dept + '. ') if dept else ''}"
+            f"Remote role based in the United States. See the full job description at {it.get('url','')}."
+        )
+        sal_min, sal_max, sal_raw = _extract_salary(description)
+        jobs.append(
+            {
+                "title": title,
+                "url": (it.get("url") or "").strip(),
+                "location": location,
+                "description": description,
+                "salary_min": sal_min,
+                "salary_max": sal_max,
+                "salary_raw": sal_raw,
+            }
+        )
+    return jobs
+
+
 async def fetch_all_companies(
     companies_config: list[dict[str, str]],
 ) -> list[dict[str, Any]]:
@@ -477,6 +567,8 @@ async def fetch_all_companies(
             raw_jobs = await fetch_recruitee_jobs(slug)
         elif platform == "workable":
             raw_jobs = await fetch_workable_jobs(slug)
+        elif platform == "rippling":
+            raw_jobs = await fetch_rippling_jobs(slug)
         else:
             print(f"  Unknown platform '{platform}' for {name} – skipping")
             return []

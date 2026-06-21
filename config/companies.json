@@ -297,8 +297,8 @@
   },
   {
     "name": "Rudderstack",
-    "platform": "greenhouse",
-    "slug": "rudderstack",
+    "platform": "rippling",
+    "slug": "rudderstack-careers",
     "active": false
   },
   {
@@ -447,7 +447,7 @@
   },
   {
     "name": "Freshworks",
-    "platform": "lever",
+    "platform": "rippling",
     "slug": "freshworks"
   },
   {
@@ -777,7 +777,7 @@
   },
   {
     "name": "Opendoor",
-    "platform": "greenhouse",
+    "platform": "rippling",
     "slug": "opendoor",
     "active": false
   },
@@ -888,7 +888,7 @@
   },
   {
     "name": "Arc",
-    "platform": "greenhouse",
+    "platform": "rippling",
     "slug": "arc",
     "active": false
   },
@@ -1750,8 +1750,8 @@
   },
   {
     "name": "Guru",
-    "platform": "greenhouse",
-    "slug": "guru",
+    "platform": "rippling",
+    "slug": "guru-careers",
     "active": false
   },
   {
