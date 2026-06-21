@@ -171,8 +171,8 @@
   },
   {
     "name": "Weights & Biases",
-    "platform": "greenhouse",
-    "slug": "weightsandbiases",
+    "platform": "lever",
+    "slug": "wandb",
     "active": false
   },
   {
@@ -247,7 +247,7 @@
   {
     "name": "Hex",
     "platform": "greenhouse",
-    "slug": "hex",
+    "slug": "hextechnologies",
     "active": false
   },
   {
@@ -263,8 +263,8 @@
   },
   {
     "name": "Redpanda",
-    "platform": "ashby",
-    "slug": "redpanda",
+    "platform": "greenhouse",
+    "slug": "redpandadata",
     "active": false
   },
   {
@@ -389,7 +389,7 @@
   {
     "name": "Sourcegraph",
     "platform": "greenhouse",
-    "slug": "sourcegraph",
+    "slug": "sourcegraph91",
     "active": false
   },
   {
