@@ -285,8 +285,8 @@
   },
   {
     "name": "Soda Data",
-    "platform": "ashby",
-    "slug": "soda",
+    "platform": "workable",
+    "slug": "soda-data-nv",
     "active": false
   },
   {
