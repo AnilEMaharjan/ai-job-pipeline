@@ -192,7 +192,7 @@
   },
   {
     "name": "Attentive",
-    "platform": "lever",
+    "platform": "greenhouse",
     "slug": "attentive"
   },
   {
@@ -252,8 +252,8 @@
   },
   {
     "name": "Color Health",
-    "platform": "lever",
-    "slug": "color"
+    "platform": "ashby",
+    "slug": "color-health"
   },
   {
     "name": "HashiCorp",
@@ -338,7 +338,7 @@
   },
   {
     "name": "Temporal",
-    "platform": "greenhouse",
+    "platform": "ashby",
     "slug": "temporal"
   },
   {
@@ -553,8 +553,8 @@
   },
   {
     "name": "G2",
-    "platform": "greenhouse",
-    "slug": "g2crowd",
+    "platform": "ashby",
+    "slug": "g2",
     "active": false
   },
   {
@@ -565,8 +565,8 @@
   },
   {
     "name": "LiveChat",
-    "platform": "greenhouse",
-    "slug": "livechat",
+    "platform": "lever",
+    "slug": "livechatinc",
     "active": false
   },
   {
@@ -619,8 +619,8 @@
   },
   {
     "name": "Ironclad",
-    "platform": "greenhouse",
-    "slug": "ironclad",
+    "platform": "ashby",
+    "slug": "ironcladhq",
     "active": false
   },
   {
@@ -678,13 +678,13 @@
   },
   {
     "name": "Pleo",
-    "platform": "greenhouse",
+    "platform": "ashby",
     "slug": "pleo"
   },
   {
     "name": "Payhawk",
     "platform": "greenhouse",
-    "slug": "payhawk",
+    "slug": "payhawkio",
     "active": false
   },
   {
@@ -943,8 +943,8 @@
   },
   {
     "name": "Maze",
-    "platform": "greenhouse",
-    "slug": "maze",
+    "platform": "ashby",
+    "slug": "mazehq",
     "active": false
   },
   {
@@ -1299,8 +1299,8 @@
   },
   {
     "name": "Wiz",
-    "platform": "ashby",
-    "slug": "wiz"
+    "platform": "greenhouse",
+    "slug": "wizinc"
   },
   {
     "name": "Rollbar",
@@ -1333,7 +1333,7 @@
   {
     "name": "Paidy",
     "platform": "greenhouse",
-    "slug": "paidy",
+    "slug": "paidyinc",
     "active": false
   },
   {
@@ -1917,7 +1917,7 @@
   {
     "name": "Gather",
     "platform": "greenhouse",
-    "slug": "gather"
+    "slug": "gatherai"
   },
   {
     "name": "Cash App",
@@ -3266,7 +3266,7 @@
   {
     "name": "At-Bay",
     "platform": "greenhouse",
-    "slug": "atbay"
+    "slug": "atbayjobs"
   },
   {
     "name": "Upstart",
@@ -3565,7 +3565,7 @@
   },
   {
     "name": "Transform",
-    "platform": "ashby",
+    "platform": "greenhouse",
     "slug": "transform"
   },
   {
@@ -4945,7 +4945,7 @@
   },
   {
     "name": "Octave",
-    "platform": "ashby",
+    "platform": "greenhouse",
     "slug": "octave"
   },
   {
@@ -5435,7 +5435,7 @@
   },
   {
     "name": "Merge",
-    "platform": "greenhouse",
+    "platform": "ashby",
     "slug": "merge"
   },
   {
