@@ -6997,5 +6997,15 @@
     "name": "Care Access",
     "platform": "greenhouse",
     "slug": "careaccess"
+  },
+  {
+    "name": "Origin",
+    "platform": "rippling",
+    "slug": "useorigin"
+  },
+  {
+    "name": "Nexcess",
+    "platform": "rippling",
+    "slug": "nexcess"
   }
 ]
