@@ -285,12 +285,21 @@ def get_jobs(
     max_score: int = 0,
     min_salary: int = 0,
     has_connection: bool = False,
+    hide_applied_cos: bool = False,
     rejected: str = "hide",
 ):
     conn = get_db()
     referrals = load_referrals()
     query = "SELECT * FROM jobs WHERE removed = 0"
     params = []
+
+    # Hide jobs at companies where you already applied to a different role
+    # (keeps the applied ones themselves visible; just hides the duplicates).
+    if hide_applied_cos:
+        query += (
+            " AND (status = 'applied' OR company NOT IN "
+            "(SELECT DISTINCT company FROM jobs WHERE status = 'applied'))"
+        )
 
     # Rejected-by-me is a flag orthogonal to status: hide (default) / only / all
     if rejected == "only":

@@ -198,6 +198,7 @@
 
   <span class="status-checks">
     <label><input type="checkbox" id="filter-connection" onchange="loadJobs()"> 🤝 Has connection</label>
+    <label><input type="checkbox" id="filter-hide-applied-cos" onchange="loadJobs()"> 🙈 Hide applied-to companies</label>
   </span>
 
   <span class="filter-group">
@@ -333,6 +334,7 @@ function resetToStatus(status) {
   document.getElementById('filter-category').value = '';
   document.getElementById('filter-platform').value = '';
   document.getElementById('filter-connection').checked = false;
+  document.getElementById('filter-hide-applied-cos').checked = false;
   document.getElementById('filter-sort').value = 'score';
   document.getElementById('filter-search').value = '';
   document.getElementById('filter-salary').value = '0';
@@ -409,6 +411,7 @@ async function loadJobs() {
   const category = document.getElementById('filter-category').value;
   const platform = document.getElementById('filter-platform').value;
   const connection = document.getElementById('filter-connection').checked;
+  const hideAppliedCos = document.getElementById('filter-hide-applied-cos').checked;
   const sort     = document.getElementById('filter-sort').value;
   const search   = document.getElementById('filter-search').value;
   const salary   = document.getElementById('filter-salary').value;
@@ -418,6 +421,7 @@ async function loadJobs() {
 
   const params = new URLSearchParams({ status, category, platform, sort, search, min_salary: salary, rejected });
   if (connection) params.set('has_connection', 'true');
+  if (hideAppliedCos) params.set('hide_applied_cos', 'true');
   if (scoreMin) params.set('min_score', scoreMin);
   if (scoreMax) params.set('max_score', scoreMax);
   const res = await fetch('/api/jobs?' + params);
