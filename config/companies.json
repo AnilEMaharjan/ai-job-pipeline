@@ -7012,5 +7012,10 @@
     "name": "Tremendous",
     "platform": "ashby",
     "slug": "Tremendous"
+  },
+  {
+    "name": "BetterUp",
+    "platform": "ashby",
+    "slug": "betterup"
   }
 ]
