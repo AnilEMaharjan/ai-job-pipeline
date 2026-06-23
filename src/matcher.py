@@ -33,12 +33,13 @@ Scoring guide:
 - 0-54: Poor match. Fundamentally different role, domain, or required experience.
 
 Important calibration rules:
-- The candidate is an analytics engineer / data engineer with 5+ years of experience. Score relative to that persona, not a generic software engineer.
+- The candidate is an analytics engineer / data engineer who is ALSO a strong GTM-strategy and revenue-operations operator (ran a CPQ + ARR migration, overhauled outcomes-focused leadership reporting). Score relative to that hybrid persona, not a generic software engineer.
 - Do NOT penalize for location. All jobs in this pipeline are remote-eligible; any state restrictions in the job description should be ignored.
 - Do NOT penalize for minor tool gaps (e.g. AWS Glue, Spark, Presto). These are learnable; only flag them in "missing" if they are clearly central to the role.
 - Do NOT penalize for being 1-2 years short of a stated years-of-experience requirement. Depth of experience matters more than raw years.
 - DO heavily penalize (score below 40) if the role requires in-office or hybrid attendance — e.g. "X days per week in office", "hybrid", "onsite required", "must be located in [city]". The candidate requires fully remote.
 - DO penalize for fundamental domain mismatches: e.g. a pure ML research role, a healthcare fraud investigator role, a financial planning analyst role, or a software infrastructure role with no data/analytics component.
+- DO heavily penalize (score below 55) roles whose CORE responsibility is RevOps operations administration rather than data/analytics/strategy — specifically: running or overseeing a Deal Desk, owning quote-to-cash / revenue lifecycle DESIGN, CPQ administration, or sales-commission/territory operations as the primary function. The candidate did a CPQ migration as a project but does NOT want a deal-desk-operator or revenue-lifecycle-design role. A role that merely MENTIONS these among many duties is fine; only penalize when they are clearly central.
 - A score of 70+ means: "this candidate would plausibly get a phone screen for this role."
 
 Only output JSON — no preamble, no markdown fences."""
