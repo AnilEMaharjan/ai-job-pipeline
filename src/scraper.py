@@ -336,10 +336,15 @@ async def fetch_ashby_jobs(slug: str) -> list[dict[str, Any]]:
             sal_min, sal_max, fallback_raw = _extract_salary(description)
             sal_raw = sal_raw or fallback_raw
 
+        # Prefer the readable posting URL over the bare /application apply form
+        # (the form often looks broken, especially once a posting closes).
+        job_url = (job.get("jobUrl") or "").strip()
+        if not job_url:
+            job_url = re.sub(r"/application/?$", "", job.get("applyUrl", "").strip())
         jobs.append(
             {
                 "title": job.get("title", "").strip(),
-                "url": job.get("applyUrl", "").strip(),
+                "url": job_url,
                 "location": job.get("location", "Remote"),
                 "description": description,
                 "salary_min": sal_min,
