@@ -12,8 +12,6 @@ import click
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
-from rich import box
 
 # Load .env from project root before importing modules
 load_dotenv(Path(__file__).parent / ".env", override=True)
@@ -26,7 +24,7 @@ if _tinytex.exists():
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src import database, scraper, matcher, generator, pdf_writer
+from src import database, scraper, matcher, generator, pdf_writer  # noqa: E402  (import after sys.path/.env setup)
 
 console = Console()
 
@@ -147,6 +145,38 @@ def load_companies() -> list[dict]:
         return json.load(f)
 
 
+def regenerate_company_lists() -> None:
+    """Rewrite the shareable company-list exports (names + careers URLs) from
+    companies.json so they never drift. Called after each fetch."""
+    import urllib.parse
+    root = Path(__file__).parent
+    companies = load_companies()
+
+    def board_url(c: dict) -> str:
+        s = urllib.parse.quote(c["slug"])
+        return {
+            "greenhouse": f"https://job-boards.greenhouse.io/{s}",
+            "lever":      f"https://jobs.lever.co/{s}",
+            "ashby":      f"https://jobs.ashbyhq.com/{s}",
+            "recruitee":  f"https://{s}.recruitee.com",
+            "workable":   f"https://apply.workable.com/{s}",
+            "rippling":   f"https://ats.rippling.com/{s}/jobs",
+        }.get(c["platform"], "")
+
+    rows = sorted(companies, key=lambda c: c["name"].lower())
+    (root / "companies_list.txt").write_text(
+        "\n".join(sorted({c["name"] for c in companies}, key=str.lower))
+    )
+    md = [f"# Job Pipeline — Tracked Companies ({len(rows)})", ""]
+    md.append("Careers-board URLs are approximate (built from platform + slug); "
+              "most resolve, a few may 404 if a company uses a custom domain.")
+    md.append("")
+    md.append("| Company | Careers board |")
+    md.append("|---|---|")
+    md += [f"| {c['name']} | {board_url(c)} |" for c in rows]
+    (root / "companies_list.md").write_text("\n".join(md) + "\n")
+
+
 def slugify(text: str) -> str:
     """Convert text to a filesystem-safe slug."""
     text = text.lower().strip()
@@ -200,6 +230,7 @@ def fetch():
 
     stale = database.archive_stale_jobs()
     closed_q = database.archive_closed_queued_jobs()
+    regenerate_company_lists()  # keep the shareable lists in sync with companies.json
     console.print(
         f"\n[bold green]Done![/bold green] "
         f"Saved [green]{new_count}[/green] new jobs, "
@@ -448,7 +479,7 @@ def review():
 
     if approved:
         console.print(
-            f"\n[cyan]Hint:[/cyan] Run [bold]python pipeline.py generate[/bold] to create materials for approved jobs."
+            "\n[cyan]Hint:[/cyan] Run [bold]python pipeline.py generate[/bold] to create materials for approved jobs."
         )
 
 

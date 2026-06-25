@@ -204,7 +204,6 @@ def _build_resume_tex(resume: dict[str, Any]) -> str:
         location   = _tex(exp.get("location", ""))
         start      = _tex(_fmt_date(exp.get("start_date", "")))
         end        = _tex(_fmt_date(exp.get("end_date", "Present")))
-        topline    = _tex(exp.get("description", ""))
         platforms  = exp.get("platforms", [])
         key_models = exp.get("key_models", "")
         bullets    = exp.get("bullets", [])

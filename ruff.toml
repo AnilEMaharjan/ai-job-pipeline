@@ -1,0 +1,9 @@
+# Lightweight linting: catch real bugs (undefined names, unused imports/vars,
+# bad f-strings), not style nags. Keeps broken imports from being pushed.
+target-version = "py311"
+exclude = [".venv", "applications", "data"]
+
+[lint]
+# Default rules (Pyflakes F + pycodestyle E/W) are the high-signal set.
+# E501 (line length) is noise for this project; ignore it.
+ignore = ["E501"]

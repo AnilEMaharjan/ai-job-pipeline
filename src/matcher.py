@@ -192,7 +192,7 @@ def score_jobs_batch(
         from src.database import get_rejection_feedback
         feedback = get_rejection_feedback()
         if feedback:
-            print(f"  (applying feedback from your past rejections)")
+            print("  (applying feedback from your past rejections)")
     except Exception:
         feedback = ""
 
