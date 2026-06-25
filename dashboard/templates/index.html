@@ -376,6 +376,15 @@ function payStr(a) {
   if (a.salary_max) return 'up to ' + k(a.salary_max);
   return '—';
 }
+// The "applied here" pill, showing an at-a-glance open/closed breakdown of the
+// roles you've applied to at this company (so you don't have to open the modal).
+function appliedPill(j) {
+  const o = j.also_applied.filter(a => !a.closed).length;
+  const c = j.also_applied.filter(a => a.closed).length;
+  const label = c === 0 ? `${o} 🟢` : o === 0 ? `${c} 🔴` : `🟢${o} 🔴${c}`;
+  const tip = `You applied to ${j.also_applied.length} role(s) at ${j.company}: ${o} still open, ${c} closed. Click to compare.`;
+  return `<span class="applied-here-tag" data-company="${esc(j.company)}" data-applied="${esc(JSON.stringify(j.also_applied))}" data-title="${esc(j.title)}" data-score="${j.score ?? ''}" data-min="${j.salary_min ?? ''}" data-max="${j.salary_max ?? ''}" onclick="showAppliedModal(this.dataset.company, this.dataset.applied, this.dataset.title, this.dataset.score, this.dataset.min, this.dataset.max)" title="${esc(tip)}">📋 applied here (${label})</span>`;
+}
 function showAppliedModal(company, appliedJson, curTitle, curScore, curMin, curMax) {
   let list = [];
   try { list = JSON.parse(appliedJson); } catch (e) {}
@@ -499,7 +508,7 @@ async function loadJobs() {
             <div class="job-meta">
               <span><strong>${esc(j.company)}</strong></span>
               ${conns.length ? `<span class="conn-tag" title="${esc(conns.map(c => c.name + ' — ' + c.title).join('\\n'))}">🤝 ${conns.length} connection${conns.length > 1 ? 's' : ''}</span>` : ''}
-              ${(j.also_applied && j.also_applied.length) ? `<span class="applied-here-tag" data-company="${esc(j.company)}" data-applied="${esc(JSON.stringify(j.also_applied))}" data-title="${esc(j.title)}" data-score="${j.score ?? ''}" data-min="${j.salary_min ?? ''}" data-max="${j.salary_max ?? ''}" onclick="showAppliedModal(this.dataset.company, this.dataset.applied, this.dataset.title, this.dataset.score, this.dataset.min, this.dataset.max)" title="Compare this role to the ${j.also_applied.length} you applied to at ${esc(j.company)}">📋 applied here (${j.also_applied.length})</span>` : ''}
+              ${(j.also_applied && j.also_applied.length) ? appliedPill(j) : ''}
               ${j.category ? `<span class="category-tag">${esc(j.category)}</span>` : ''}
               ${j.platform ? `<span class="platform-tag">${esc(j.platform)}</span>` : ''}
               ${j.location ? `<span>📍 ${esc(j.location)}</span>` : ''}
