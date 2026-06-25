@@ -182,6 +182,10 @@ def save_job(
                 (now, description, posted_at, existing["id"]),
             )
             return None
+        # New job. Rippling's board feed exposes no posting date, so use the first
+        # time we saw it (now == fetched_at for a new row) as the posted date.
+        if posted_at is None and platform == "rippling":
+            posted_at = now
         try:
             cursor = conn.execute(
                 """
