@@ -199,11 +199,13 @@ def fetch():
             dup_count += 1
 
     stale = database.archive_stale_jobs()
+    closed_q = database.archive_closed_queued_jobs()
     console.print(
         f"\n[bold green]Done![/bold green] "
         f"Saved [green]{new_count}[/green] new jobs, "
         f"skipped [yellow]{dup_count}[/yellow] duplicates"
-        + (f", archived [dim]{stale}[/dim] stale listings" if stale else "") + "."
+        + (f", archived [dim]{stale}[/dim] stale listings" if stale else "")
+        + (f", removed [dim]{closed_q}[/dim] closed queued roles" if closed_q else "") + "."
     )
 
 

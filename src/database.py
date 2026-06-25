@@ -210,6 +210,25 @@ def archive_stale_jobs(days: int = STALE_DAYS) -> int:
         return cursor.rowcount
 
 
+def archive_closed_queued_jobs(days: int = 7) -> int:
+    """Drop queued roles whose posting has closed (not seen in `days` days) out of
+    the queue. A queued role with a dead posting is unactionable, so we archive it
+    sooner than the general stale window. Applied roles are preserved (kept for
+    reapply tracking); a 7-day buffer tolerates a missed daily fetch."""
+    cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+    with get_connection() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE jobs SET removed = 1
+            WHERE status = 'queued'
+            AND removed = 0
+            AND (last_seen_at IS NULL OR last_seen_at < ?)
+            """,
+            (cutoff,),
+        )
+        return cursor.rowcount
+
+
 def get_unscored_jobs() -> list[dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
