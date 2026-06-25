@@ -395,7 +395,7 @@ function seenTag(j) {
   const short = dt => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const f = d(j.fetched_at), l = d(j.last_seen_at), p = d(j.posted_at);
   const parts = [];
-  if (p) parts.push(`<span title="Posting date from the job board">📅 Posted ${short(p)}</span>`);
+  if (p) parts.push(`<span title="Posting date from the board (or first-seen date, if the board didn't provide one)">📅 Posted ${short(p)}</span>`);
   if (f) {
     const days = l ? Math.max(0, Math.round((l - f) / 86400000)) : null;
     const tip = `First seen ${f.toLocaleDateString()}` + (l ? `, last seen ${l.toLocaleDateString()}` : '')
