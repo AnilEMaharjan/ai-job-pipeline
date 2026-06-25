@@ -1,9 +1,12 @@
-# Lightweight linting: catch real bugs (undefined names, unused imports/vars,
-# bad f-strings), not style nags. Keeps broken imports from being pushed.
+# Lightweight linting: catch real bugs, not style nags. Keeps broken code from
+# being pushed (enforced in the pre-push hook).
 target-version = "py311"
 exclude = [".venv", "applications", "data"]
 
 [lint]
-# Default rules (Pyflakes F + pycodestyle E/W) are the high-signal set.
-# E501 (line length) is noise for this project; ignore it.
+# E/F/W = pyflakes + pycodestyle (undefined names, unused imports, syntax).
+# B = bugbear (real footguns, e.g. loop-variable closures).
+# I = import sorting.  UP = modern-syntax suggestions.
+select = ["E", "F", "W", "B", "I", "UP"]
+# Line length is noise for this project.
 ignore = ["E501"]

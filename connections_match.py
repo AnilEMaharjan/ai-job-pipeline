@@ -123,7 +123,7 @@ def read_people(text: str):
     for r in rows:
         if not r or all(not x.strip() for x in r):
             continue
-        def g(key):
+        def g(key, r=r):  # bind r to this iteration's row
             idx = ci[key]
             return r[idx].strip() if idx is not None and idx < len(r) else ""
         people.append({

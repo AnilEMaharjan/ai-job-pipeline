@@ -9,7 +9,6 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-
 # Prefer pdflatex on PATH; fall back to the macOS TinyTeX install location.
 PDFLATEX = shutil.which("pdflatex") or str(
     Path.home() / "Library/TinyTeX/bin/universal-darwin/pdflatex"

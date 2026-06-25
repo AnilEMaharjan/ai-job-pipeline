@@ -24,7 +24,13 @@ if _tinytex.exists():
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src import database, scraper, matcher, generator, pdf_writer  # noqa: E402  (import after sys.path/.env setup)
+from src import (  # noqa: E402  (import after sys.path/.env setup)
+    database,
+    generator,
+    matcher,
+    pdf_writer,
+    scraper,
+)
 
 console = Console()
 
@@ -555,8 +561,9 @@ def run(ctx):
 @click.option("--port", default=8766, help="Port to run on (8765 is the daily-briefing assistant).")
 def dashboard(port):
     """Launch the web dashboard."""
-    import uvicorn
     import webbrowser
+
+    import uvicorn
     console.print(Panel(f"[bold blue]Opening dashboard at http://localhost:{port}[/bold blue]", expand=False))
     try:
         webbrowser.open(f"http://localhost:{port}")
