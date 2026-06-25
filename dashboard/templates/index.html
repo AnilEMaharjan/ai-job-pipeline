@@ -73,6 +73,8 @@
   .job-info { flex: 1; min-width: 0; }
   .job-title { font-size: 14px; font-weight: 600; color: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .job-meta { font-size: 12px; color: #888; margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .job-dates { font-size: 11px; color: #9ca3af; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .job-dates span { display: flex; align-items: center; gap: 3px; }
   .job-meta span { display: flex; align-items: center; gap: 3px; }
   .category-tag { background: #f0f4ff; color: #3b5bdb; font-size: 11px; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
   .platform-tag { background: #f3f4f6; color: #6b7280; font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 500; text-transform: capitalize; }
@@ -387,20 +389,21 @@ function payStr(a) {
 // First-seen / last-seen tag. We don't get a posting date from most boards, so
 // "first seen" (fetched_at) is our best proxy for how long a role's been up.
 function seenTag(j) {
-  const fs = j.fetched_at, ls = j.last_seen_at;
-  if (!fs) return '';
-  const d = s => { try { return new Date(s); } catch(e) { return null; } };
-  const short = dt => dt ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '?';
-  const f = d(fs), l = d(ls);
-  const days = (f && l) ? Math.max(0, Math.round((l - f) / 86400000)) : null;
-  const tip = `First seen ${f ? f.toLocaleDateString() : '?'}, last seen ${l ? l.toLocaleDateString() : '?'}`
-    + (days != null ? ` (${days} day${days===1?'':'s'} tracked)` : '');
-  const label = (l && f && short(l) !== short(f)) ? `${short(f)}–${short(l)}` : short(f);
-  const seen = `<span title="${esc(tip)}">🕒 seen ${label}</span>`;
-  // When the board gave a real posting date, show it (more accurate than first-seen).
-  const p = d(j.posted_at);
-  const posted = p ? `<span title="Posting date from the job board">📅 posted ${short(p)}</span>` : '';
-  return posted + seen;
+  // Guard: new Date(null/'') returns epoch 0 (Dec 31 1969), so only parse truthy
+  // values and reject invalid dates — otherwise a missing posted_at renders "Dec 31".
+  const d = s => { if (!s) return null; const dt = new Date(s); return isNaN(dt) ? null : dt; };
+  const short = dt => dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const f = d(j.fetched_at), l = d(j.last_seen_at), p = d(j.posted_at);
+  const parts = [];
+  if (p) parts.push(`<span title="Posting date from the job board">📅 Posted ${short(p)}</span>`);
+  if (f) {
+    const days = l ? Math.max(0, Math.round((l - f) / 86400000)) : null;
+    const tip = `First seen ${f.toLocaleDateString()}` + (l ? `, last seen ${l.toLocaleDateString()}` : '')
+      + (days != null ? ` (${days} day${days===1?'':'s'} tracked)` : '');
+    const label = (l && short(l) !== short(f)) ? `${short(f)} – ${short(l)}` : short(f);
+    parts.push(`<span title="${esc(tip)}">🕒 Seen ${label}</span>`);
+  }
+  return parts.length ? `<div class="job-dates">${parts.join('')}</div>` : '';
 }
 // The "applied here" pill, showing an at-a-glance open/closed breakdown of the
 // roles you've applied to at this company (so you don't have to open the modal).
@@ -563,9 +566,9 @@ async function loadJobs() {
               ${j.platform ? `<span class="platform-tag">${esc(j.platform)}</span>` : ''}
               ${j.location ? `<span>📍 ${esc(j.location)}</span>` : ''}
               ${j.salary_min && j.salary_max ? `<span>💰 $${Math.round(j.salary_min/1000)}k–$${Math.round(j.salary_max/1000)}k</span>` : j.salary_max ? `<span>💰 up to $${Math.round(j.salary_max/1000)}k</span>` : j.salary_raw ? `<span>💰 ${esc(j.salary_raw)}</span>` : ''}
-              ${seenTag(j)}
               ${statusPill}
             </div>
+            ${seenTag(j)}
           </div>
           <div class="job-actions" id="actions-${j.id}">
             ${materialsBtn}${generateBtn}${urlBtn}${queueBtn}${applyBtn}${removeBtn}
