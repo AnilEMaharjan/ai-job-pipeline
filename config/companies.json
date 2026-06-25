@@ -7017,5 +7017,15 @@
     "name": "BetterUp",
     "platform": "ashby",
     "slug": "betterup"
+  },
+  {
+    "name": "Galileo",
+    "platform": "greenhouse",
+    "slug": "galileo"
+  },
+  {
+    "name": "Hevo Data",
+    "platform": "lever",
+    "slug": "hevo"
   }
 ]
