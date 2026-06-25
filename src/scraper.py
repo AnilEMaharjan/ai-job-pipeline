@@ -411,6 +411,70 @@ async def fetch_recruitee_jobs(slug: str) -> list[dict[str, Any]]:
     return jobs
 
 
+async def _breezy_job_description(client: httpx.AsyncClient, job_url: str) -> str:
+    """Breezy position pages are server-rendered, so the JD is in the HTML. Strip
+    scripts/tags and return the text; "" if it can't be fetched."""
+    try:
+        r = await client.get(job_url)
+        if r.status_code != 200:
+            return ""
+        body = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", r.text, flags=re.S | re.I)
+        text = html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", body))).strip()
+        return text if len(text) > 200 else ""
+    except httpx.RequestError:
+        return ""
+
+
+async def fetch_breezy_jobs(slug: str) -> list[dict[str, Any]]:
+    """Fetch jobs from a Breezy HR board ({slug}.breezy.hr). Breezy exposes a clean
+    public positions feed at /json (list of {name, url, location, ...}); the JD
+    lives on each server-rendered position page, which we fetch for full content.
+    Keeps US / remote roles; the score-time pre-filter refines further."""
+    try:
+        async with httpx.AsyncClient(timeout=20.0, headers=HEADERS, follow_redirects=True) as client:
+            resp = await client.get(f"https://{slug}.breezy.hr/json")
+            if resp.status_code != 200:
+                return []
+            positions = resp.json()
+            if not isinstance(positions, list):
+                return []
+
+            kept = []
+            for p in positions:
+                title = (p.get("name") or "").strip()
+                loc = p.get("location") or {}
+                country = ((loc.get("country") or {}).get("name") or "")
+                city = (loc.get("city") or "")
+                loc_str = ", ".join(x for x in [city, country] if x) or "Remote"
+                is_us = country in ("United States", "USA", "US") or _is_us_location(loc_str)
+                is_remote = "remote" in title.lower() or "remote" in loc_str.lower() or not city
+                if is_us and (is_remote or "remote" in title.lower()):
+                    kept.append((p, title, loc_str))
+
+            sem = asyncio.Semaphore(5)
+            async def _desc(u):
+                async with sem:
+                    return await _breezy_job_description(client, u)
+            descs = await asyncio.gather(*[_desc((p.get("url") or "").strip()) for p, _, _ in kept])
+    except (httpx.RequestError, json.JSONDecodeError, ValueError):
+        return []
+
+    jobs = []
+    for (p, title, loc_str), jd in zip(kept, descs, strict=True):
+        description = jd or f"{title}. Remote role in the United States. See {p.get('url','')}."
+        sal_min, sal_max, sal_raw = _extract_salary(description)
+        jobs.append({
+            "title": title,
+            "url": (p.get("url") or "").strip(),
+            "location": loc_str,
+            "description": description,
+            "salary_min": sal_min,
+            "salary_max": sal_max,
+            "salary_raw": sal_raw,
+        })
+    return jobs
+
+
 async def fetch_workable_jobs(slug: str) -> list[dict[str, Any]]:
     """Best-effort fetch from a Workable widget board. Workable's public API is
     locked down per-account, so this degrades gracefully (returns [] if not open)."""
@@ -617,6 +681,8 @@ async def fetch_all_companies(
             raw_jobs = await fetch_workable_jobs(slug)
         elif platform == "rippling":
             raw_jobs = await fetch_rippling_jobs(slug)
+        elif platform == "breezy":
+            raw_jobs = await fetch_breezy_jobs(slug)
         else:
             print(f"  Unknown platform '{platform}' for {name} – skipping")
             return []

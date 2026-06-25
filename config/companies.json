@@ -7042,5 +7042,10 @@
     "name": "Default",
     "platform": "ashby",
     "slug": "withdefault"
+  },
+  {
+    "name": "MadKudu",
+    "platform": "breezy",
+    "slug": "madkudu"
   }
 ]
