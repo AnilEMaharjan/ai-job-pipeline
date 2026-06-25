@@ -356,22 +356,24 @@ def get_jobs(
     query += f" {order} LIMIT 200"
     rows = conn.execute(query, params).fetchall()
 
-    # Map of company -> roles already applied to (to flag duplicate-company applies
-    # and let the UI compare seniority / score / pay against the role being viewed).
-    applied_by_company: dict[str, list[dict]] = {}
-    for ar in conn.execute(
-        "SELECT company, title, url, score, salary_min, salary_max FROM jobs WHERE status='applied'"
-    ).fetchall():
-        applied_by_company.setdefault(ar["company"], []).append({
-            "title": ar["title"], "url": ar["url"], "score": ar["score"],
-            "salary_min": ar["salary_min"], "salary_max": ar["salary_max"],
-        })
-
     # A posting is "closed" once it drops out of the company's live feed: the daily
     # fetch refreshes last_seen_at for every currently-listed job, so a stale value
     # means the role is no longer open. (Reliable because it comes from the board
     # API, not the JS-rendered page.) Use 4 days to tolerate a missed daily run.
     CLOSED_CUTOFF = (datetime.utcnow() - timedelta(days=4)).isoformat()
+
+    # Map of company -> roles already applied to (to flag duplicate-company applies
+    # and let the UI compare seniority / score / pay / open-status against the role
+    # being viewed). Each entry carries whether its own posting is still open.
+    applied_by_company: dict[str, list[dict]] = {}
+    for ar in conn.execute(
+        "SELECT company, title, url, score, salary_min, salary_max, last_seen_at FROM jobs WHERE status='applied'"
+    ).fetchall():
+        applied_by_company.setdefault(ar["company"], []).append({
+            "title": ar["title"], "url": ar["url"], "score": ar["score"],
+            "salary_min": ar["salary_min"], "salary_max": ar["salary_max"],
+            "closed": (not ar["last_seen_at"]) or (ar["last_seen_at"] < CLOSED_CUTOFF),
+        })
     # Count of still-open (recently-seen, not-removed) roles per company, so a
     # closed applied role can point you to what's still open to reapply to.
     open_roles_by_company: dict[str, int] = {}

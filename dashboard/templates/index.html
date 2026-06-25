@@ -97,6 +97,8 @@
   .modal-rec.rec-go { background: #dcfce7; color: #166534; }
   .modal-rec.rec-stop { background: #fee2e2; color: #991b1b; }
   .modal-rec.rec-maybe { background: #fef9c3; color: #854d0e; }
+  .cmp-closed { color: #b91c1c; font-weight: 600; }
+  .cmp-open { color: #15803d; font-weight: 600; }
   .job-card.has-conn { border-left: 3px solid #22c55e; }
   .detail-col.conns h4 { color: #15803d; }
   .detail-col.conns a { color: #1d4ed8; text-decoration: none; }
@@ -381,18 +383,26 @@ function showAppliedModal(company, appliedJson, curTitle, curScore, curMin, curM
   const curLvl = seniorityLevel(cur.title);
   const maxApplied = list.reduce((m, a) => Math.max(m, seniorityLevel(a.title).n), 0);
 
+  const allClosed = list.length && list.every(a => a.closed);
   // Recommendation: compare this role's seniority to the most senior one you applied to.
   let rec, recClass;
   if (curLvl.n > maxApplied) { rec = `This role looks more senior (${curLvl.label}) than what you already applied to here. Worth applying.`; recClass = 'rec-go'; }
   else if (curLvl.n < maxApplied) { rec = `You already applied to a more senior role here. This one is a step down, so it may not add much. Consider focusing on the senior application.`; recClass = 'rec-stop'; }
   else { rec = `Similar level to what you applied to. Applying to both is reasonable if the teams or focus areas differ. Skip if it is effectively the same role.`; recClass = 'rec-maybe'; }
+  // If every role you applied to here has closed, reapplying to an open one is clearly fine.
+  if (allClosed) { rec = `Every role you applied to here has closed, so reapplying to an open one makes sense. ` + rec; recClass = 'rec-go'; }
 
+  const postingCell = (a, isCur) => {
+    if (isCur) return '—';
+    return a.closed ? '<span class="cmp-closed">🔴 closed</span>' : '<span class="cmp-open">🟢 open</span>';
+  };
   const row = (a, isCur) => `
     <tr class="${isCur ? 'cmp-cur' : ''}">
       <td>${isCur ? '<strong>This role</strong><br>' : ''}${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.title)}</a>` : esc(a.title)}</td>
       <td>${seniorityLevel(a.title).label}</td>
       <td>${a.score != null ? a.score : '—'}</td>
       <td>${payStr(a)}</td>
+      <td>${postingCell(a, isCur)}</td>
     </tr>`;
 
   const overlay = document.createElement('div');
@@ -401,7 +411,7 @@ function showAppliedModal(company, appliedJson, curTitle, curScore, curMin, curM
     <div class="modal-box" onclick="event.stopPropagation()">
       <div class="modal-title">Compare roles at ${esc(company)}</div>
       <table class="cmp-table">
-        <thead><tr><th>Role</th><th>Level</th><th>Score</th><th>Pay (band top)</th></tr></thead>
+        <thead><tr><th>Role</th><th>Level</th><th>Score</th><th>Pay (band top)</th><th>Posting</th></tr></thead>
         <tbody>${row(cur, true)}${list.map(a => row(a, false)).join('')}</tbody>
       </table>
       <div class="modal-rec ${recClass}">${rec}</div>
