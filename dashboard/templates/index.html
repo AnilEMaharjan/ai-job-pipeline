@@ -232,7 +232,9 @@
     <span class="filter-label">Sort</span>
     <select id="filter-sort" onchange="loadJobs()">
       <option value="score">Score</option>
-      <option value="date">Most recent</option>
+      <option value="date">Most recently seen</option>
+      <option value="posted_desc">Posted (newest)</option>
+      <option value="posted_asc">Posted (oldest)</option>
       <option value="company">Company</option>
     </select>
   </span>
@@ -394,7 +396,11 @@ function seenTag(j) {
   const tip = `First seen ${f ? f.toLocaleDateString() : '?'}, last seen ${l ? l.toLocaleDateString() : '?'}`
     + (days != null ? ` (${days} day${days===1?'':'s'} tracked)` : '');
   const label = (l && f && short(l) !== short(f)) ? `${short(f)}–${short(l)}` : short(f);
-  return `<span title="${esc(tip)}">🕒 ${label}</span>`;
+  const seen = `<span title="${esc(tip)}">🕒 seen ${label}</span>`;
+  // When the board gave a real posting date, show it (more accurate than first-seen).
+  const p = d(j.posted_at);
+  const posted = p ? `<span title="Posting date from the job board">📅 posted ${short(p)}</span>` : '';
+  return posted + seen;
 }
 // The "applied here" pill, showing an at-a-glance open/closed breakdown of the
 // roles you've applied to at this company (so you don't have to open the modal).

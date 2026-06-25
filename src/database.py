@@ -33,6 +33,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
         "salary_raw":   "ALTER TABLE jobs ADD COLUMN salary_raw TEXT",
         "rejected":     "ALTER TABLE jobs ADD COLUMN rejected INTEGER NOT NULL DEFAULT 0",
         "reject_reason": "ALTER TABLE jobs ADD COLUMN reject_reason TEXT",
+        "posted_at":    "ALTER TABLE jobs ADD COLUMN posted_at TEXT",
     }
     for col, sql in migrations.items():
         if col not in cols:
@@ -68,6 +69,7 @@ def init_db() -> None:
                 salary_raw      TEXT,
                 fetched_at      TEXT NOT NULL,
                 last_seen_at    TEXT,
+                posted_at       TEXT,
                 scored_at       TEXT
             );
 
@@ -161,6 +163,7 @@ def save_job(
     salary_min: int | None = None,
     salary_max: int | None = None,
     salary_raw: str | None = None,
+    posted_at: str | None = None,
 ) -> int | None:
     """Upsert a job. New jobs are inserted; existing jobs get last_seen_at updated.
     Returns new row id for new jobs, None for updates."""
@@ -171,10 +174,12 @@ def save_job(
             "SELECT id FROM jobs WHERE company = ? AND title = ?", (company, title)
         ).fetchone()
         if existing:
-            # Update last_seen_at and description in case it changed
+            # Refresh last_seen_at + description, and backfill posted_at if we have
+            # one now but didn't before (don't overwrite an existing value).
             conn.execute(
-                "UPDATE jobs SET last_seen_at = ?, description = ? WHERE id = ?",
-                (now, description, existing["id"]),
+                "UPDATE jobs SET last_seen_at = ?, description = ?, "
+                "posted_at = COALESCE(posted_at, ?) WHERE id = ?",
+                (now, description, posted_at, existing["id"]),
             )
             return None
         try:
@@ -182,11 +187,11 @@ def save_job(
                 """
                 INSERT INTO jobs (company, title, url, platform, location, description,
                                   category, salary_min, salary_max, salary_raw,
-                                  fetched_at, last_seen_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                  fetched_at, last_seen_at, posted_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (company, title, url, platform, location, description, category,
-                 salary_min, salary_max, salary_raw, now, now),
+                 salary_min, salary_max, salary_raw, now, now, posted_at),
             )
             return cursor.lastrowid
         except sqlite3.IntegrityError:

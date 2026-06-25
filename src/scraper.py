@@ -4,6 +4,7 @@ import asyncio
 import html
 import json
 import re
+from datetime import UTC
 from typing import Any
 
 import httpx
@@ -26,6 +27,21 @@ _NON_SALARY_CTX = re.compile(
     r"backed|invest|market cap|in sales|contract value|saved|savings|managed",
     re.I,
 )
+
+
+def _norm_date(val: Any) -> str | None:
+    """Normalize a posting date from any platform to an ISO string. Accepts ISO
+    strings (returned as-is, trimmed) and epoch seconds/ms (e.g. Lever createdAt)."""
+    if val is None or val == "":
+        return None
+    if isinstance(val, (int, float)):
+        ts = val / 1000 if val > 1e12 else val  # ms vs s
+        try:
+            from datetime import datetime
+            return datetime.fromtimestamp(ts, tz=UTC).isoformat()
+        except (ValueError, OSError, OverflowError):
+            return None
+    return str(val).strip() or None
 
 
 def _extract_salary(text: str) -> tuple[int | None, int | None, str | None]:
@@ -189,6 +205,7 @@ async def fetch_greenhouse_jobs(slug: str) -> list[dict[str, Any]]:
                 "salary_min": sal_min,
                 "salary_max": sal_max,
                 "salary_raw": sal_raw,
+                "posted_at": _norm_date(job.get("first_published") or job.get("updated_at")),
             }
         )
     return jobs
@@ -281,6 +298,7 @@ async def fetch_lever_jobs(slug: str) -> list[dict[str, Any]]:
                 "salary_min": sal_min,
                 "salary_max": sal_max,
                 "salary_raw": sal_raw,
+                "posted_at": _norm_date(posting.get("createdAt")),
             }
         )
     return jobs
@@ -350,6 +368,7 @@ async def fetch_ashby_jobs(slug: str) -> list[dict[str, Any]]:
                 "salary_min": sal_min,
                 "salary_max": sal_max,
                 "salary_raw": sal_raw,
+                "posted_at": _norm_date(job.get("publishedDate") or job.get("publishedAt")),
             }
         )
     return jobs
@@ -406,6 +425,7 @@ async def fetch_recruitee_jobs(slug: str) -> list[dict[str, Any]]:
                 "salary_min": sal_min,
                 "salary_max": sal_max,
                 "salary_raw": sal_raw,
+                "posted_at": _norm_date(o.get("published_at") or o.get("created_at")),
             }
         )
     return jobs
@@ -471,6 +491,7 @@ async def fetch_breezy_jobs(slug: str) -> list[dict[str, Any]]:
             "salary_min": sal_min,
             "salary_max": sal_max,
             "salary_raw": sal_raw,
+            "posted_at": _norm_date(p.get("published_date")),
         })
     return jobs
 
@@ -518,6 +539,7 @@ async def fetch_workable_jobs(slug: str) -> list[dict[str, Any]]:
                 "salary_min": sal_min,
                 "salary_max": sal_max,
                 "salary_raw": sal_raw,
+                "posted_at": _norm_date(j.get("published_on") or j.get("created_at")),
             }
         )
     return jobs
@@ -650,6 +672,7 @@ async def fetch_rippling_jobs(slug: str) -> list[dict[str, Any]]:
                 "salary_min": sal_min,
                 "salary_max": sal_max,
                 "salary_raw": sal_raw,
+                "posted_at": _norm_date(it.get("createdAt") or it.get("publishedAt")),
             }
         )
     return jobs

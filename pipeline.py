@@ -228,6 +228,7 @@ def fetch():
             salary_min=job.get("salary_min"),
             salary_max=job.get("salary_max"),
             salary_raw=job.get("salary_raw"),
+            posted_at=job.get("posted_at"),
         )
         if job_id:
             new_count += 1

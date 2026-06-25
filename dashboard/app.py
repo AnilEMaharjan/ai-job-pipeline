@@ -347,10 +347,14 @@ def get_jobs(
         query += " AND salary_max >= ?"
         params.append(min_salary)
 
+    # Posting-date sorts fall back to fetched_at (first seen) when a board gave no
+    # posting date, so jobs without one still order sensibly instead of vanishing.
     order = {
         "score": "ORDER BY COALESCE(score, 0) DESC",
         "date":  "ORDER BY last_seen_at DESC",
         "company": "ORDER BY company ASC",
+        "posted_desc": "ORDER BY COALESCE(posted_at, fetched_at) DESC",
+        "posted_asc":  "ORDER BY COALESCE(posted_at, fetched_at) ASC",
     }.get(sort, "ORDER BY COALESCE(score, 0) DESC")
 
     query += f" {order} LIMIT 200"
