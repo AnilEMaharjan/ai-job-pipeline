@@ -478,58 +478,101 @@ def _rippling_find_items(node: Any) -> list[dict]:
     return []
 
 
+_JD_HINT_RE = re.compile(r"(responsibilit|qualif|you will|we are looking|experience|\bdbt\b|analytics|\bSQL\b)", re.I)
+
+
+async def _rippling_job_description(client: httpx.AsyncClient, job_url: str) -> str:
+    """Pull the real JD from a Rippling job detail page. The description IS embedded
+    in the page's __NEXT_DATA__ (not the board list) — it's just the longest
+    JD-shaped string in the blob. Returns "" if it can't be found."""
+    try:
+        r = await client.get(job_url)
+        if r.status_code != 200:
+            return ""
+        m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r.text, re.S)
+        if not m:
+            return ""
+        data = json.loads(m.group(1))
+        best = ""
+        stack = [data]
+        while stack:
+            o = stack.pop()
+            if isinstance(o, str):
+                if len(o) > len(best) and _JD_HINT_RE.search(o):
+                    best = o
+            elif isinstance(o, dict):
+                stack.extend(o.values())
+            elif isinstance(o, list):
+                stack.extend(o)
+        if len(best) < 200:
+            return ""
+        return html.unescape(re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", best))).strip()
+    except (httpx.RequestError, json.JSONDecodeError, ValueError):
+        return ""
+
+
 async def fetch_rippling_jobs(slug: str) -> list[dict[str, Any]]:
     """Fetch jobs from a Rippling ATS board (ats.rippling.com/{slug}/jobs).
 
-    Rippling server-renders the job list into a __NEXT_DATA__ blob (title, url,
-    department, structured locations with countryCode + workplaceType), but the
-    full description is loaded client-side via an authed API we don't have. So we
-    filter on the structured location/workplace fields and synthesize a short
-    description; the real JD is always reachable via the job url. Only the SSR'd
-    first page is read (fine for the small boards we track)."""
-    url = f"https://ats.rippling.com/{slug}/jobs"
+    The board page server-renders the job list (title, url, department, structured
+    locations) into __NEXT_DATA__. For each US-remote role we then fetch its detail
+    page and extract the real JD (also embedded in __NEXT_DATA__), so the scorer
+    gets full content; falls back to a synthesized description if extraction fails.
+    Only the SSR'd first page of the board is read (fine for the small boards we
+    track)."""
+    board_url = f"https://ats.rippling.com/{slug}/jobs"
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS, follow_redirects=True) as client:
-            resp = await client.get(url)
+            resp = await client.get(board_url)
             if resp.status_code != 200:
                 print(f"  [rippling/{slug}] HTTP {resp.status_code} – skipping")
                 return []
-        m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', resp.text, re.S)
-        if not m:
-            return []
-        items = _rippling_find_items(json.loads(m.group(1)))
+            m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', resp.text, re.S)
+            if not m:
+                return []
+            items = _rippling_find_items(json.loads(m.group(1)))
+
+            # First filter to US-remote (cheap), then fetch detail JDs only for those.
+            kept = []
+            for it in items:
+                title = (it.get("name") or "").strip()
+                locs = it.get("locations") or []
+                us_remote_locs = []
+                any_remote = "remote" in title.lower()
+                for L in locs:
+                    cc = (L.get("countryCode") or "").upper()
+                    country = (L.get("country") or "")
+                    nm = (L.get("name") or "")
+                    wt = (L.get("workplaceType") or "").upper()
+                    is_us = cc in ("US", "USA") or country in ("United States", "USA", "US") or _is_us_location(nm)
+                    is_remote = wt in ("REMOTE", "HYBRID") or "remote" in nm.lower()
+                    if is_remote:
+                        any_remote = True
+                    if is_us and is_remote:
+                        us_remote_locs.append(nm or "United States")
+                if not us_remote_locs and not (any_remote and any(
+                    (L.get("countryCode") or "").upper() in ("US", "USA") for L in locs
+                )):
+                    continue
+                kept.append((it, title, us_remote_locs))
+
+            # Fetch real JDs concurrently (small boards, so this is cheap).
+            sem = asyncio.Semaphore(5)
+            async def _desc(job_url):
+                async with sem:
+                    return await _rippling_job_description(client, job_url)
+            descriptions = await asyncio.gather(
+                *[_desc((it.get("url") or "").strip()) for it, _, _ in kept]
+            )
     except (httpx.RequestError, json.JSONDecodeError, ValueError) as exc:
         print(f"  [rippling/{slug}] {type(exc).__name__} – skipping")
         return []
 
     jobs = []
-    for it in items:
-        title = (it.get("name") or "").strip()
-        locs = it.get("locations") or []
-        # Keep only roles with a US location that are remote (or hybrid).
-        us_remote_locs = []
-        any_remote = "remote" in title.lower()
-        for L in locs:
-            cc = (L.get("countryCode") or "").upper()
-            country = (L.get("country") or "")
-            nm = (L.get("name") or "")
-            wt = (L.get("workplaceType") or "").upper()
-            is_us = cc in ("US", "USA") or country in ("United States", "USA", "US") or _is_us_location(nm)
-            is_remote = wt in ("REMOTE", "HYBRID") or "remote" in nm.lower()
-            if is_remote:
-                any_remote = True
-            if is_us and is_remote:
-                us_remote_locs.append(nm or "United States")
-        if not us_remote_locs and not (any_remote and any(
-            (L.get("countryCode") or "").upper() in ("US", "USA") for L in locs
-        )):
-            continue
-
+    for (it, title, us_remote_locs), real_jd in zip(kept, descriptions, strict=True):
         location = "Remote – " + (us_remote_locs[0] if us_remote_locs else "United States")
         dept = ((it.get("department") or {}).get("name") or "").strip()
-        # Synthesized description: enough for title pre-filter + remote/US gate;
-        # the scorer gets thinner context than other platforms, by necessity.
-        description = (
+        description = real_jd or (
             f"{title}. {('Team: ' + dept + '. ') if dept else ''}"
             f"Remote role based in the United States. See the full job description at {it.get('url','')}."
         )
