@@ -76,7 +76,7 @@ TITLE_EXCLUDES = {
     "bilingual",
     "emea",
     "decision scientist",
-    "enablement",
+    "sales enablement", "revenue enablement",  # narrowed: don't exclude finance/data "enablement" roles
     "staff scientist",
     "site reliability",
     "temporary", "(temp)", "contractor", "contract role", "freelance",
