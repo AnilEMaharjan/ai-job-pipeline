@@ -382,6 +382,20 @@ function payStr(a) {
   if (a.salary_max) return 'up to ' + k(a.salary_max);
   return '—';
 }
+// First-seen / last-seen tag. We don't get a posting date from most boards, so
+// "first seen" (fetched_at) is our best proxy for how long a role's been up.
+function seenTag(j) {
+  const fs = j.fetched_at, ls = j.last_seen_at;
+  if (!fs) return '';
+  const d = s => { try { return new Date(s); } catch(e) { return null; } };
+  const short = dt => dt ? dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '?';
+  const f = d(fs), l = d(ls);
+  const days = (f && l) ? Math.max(0, Math.round((l - f) / 86400000)) : null;
+  const tip = `First seen ${f ? f.toLocaleDateString() : '?'}, last seen ${l ? l.toLocaleDateString() : '?'}`
+    + (days != null ? ` (${days} day${days===1?'':'s'} tracked)` : '');
+  const label = (l && f && short(l) !== short(f)) ? `${short(f)}–${short(l)}` : short(f);
+  return `<span title="${esc(tip)}">🕒 ${label}</span>`;
+}
 // The "applied here" pill, showing an at-a-glance open/closed breakdown of the
 // roles you've applied to at this company (so you don't have to open the modal).
 function appliedPill(j) {
@@ -543,6 +557,7 @@ async function loadJobs() {
               ${j.platform ? `<span class="platform-tag">${esc(j.platform)}</span>` : ''}
               ${j.location ? `<span>📍 ${esc(j.location)}</span>` : ''}
               ${j.salary_min && j.salary_max ? `<span>💰 $${Math.round(j.salary_min/1000)}k–$${Math.round(j.salary_max/1000)}k</span>` : j.salary_max ? `<span>💰 up to $${Math.round(j.salary_max/1000)}k</span>` : j.salary_raw ? `<span>💰 ${esc(j.salary_raw)}</span>` : ''}
+              ${seenTag(j)}
               ${statusPill}
             </div>
           </div>
