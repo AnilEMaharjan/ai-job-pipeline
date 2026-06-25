@@ -135,6 +135,7 @@
   .status-pill.rejected { background: #f3f4f6; color: #6b7280; }
   .status-pill.new { background: #fef9c3; color: #854d0e; }
   .status-pill.rejected-me { background: #fee2e2; color: #b91c1c; }
+  .status-pill.posting-closed { background: #fee2e2; color: #b91c1c; cursor: help; }
 
   .empty { text-align: center; padding: 60px 20px; color: #888; }
   .empty h3 { font-size: 16px; margin-bottom: 8px; }
@@ -207,6 +208,15 @@
       <option value="hide">Hide rejected</option>
       <option value="only">Only rejected</option>
       <option value="all">Show all</option>
+    </select>
+  </span>
+
+  <span class="filter-group">
+    <span class="filter-label">Posting</span>
+    <select id="filter-closed" onchange="loadJobs()">
+      <option value="all">Open + closed</option>
+      <option value="hide">Open only</option>
+      <option value="only">Closed only</option>
     </select>
   </span>
 
@@ -341,6 +351,7 @@ function resetToStatus(status) {
   document.getElementById('filter-score-min').value = '';
   document.getElementById('filter-score-max').value = '';
   document.getElementById('filter-rejected').value = (status === 'rejected') ? 'all' : 'hide';
+  document.getElementById('filter-closed').value = 'all';
   updateStatusLabel();
   loadJobs();
 }
@@ -418,8 +429,9 @@ async function loadJobs() {
   const scoreMin = document.getElementById('filter-score-min').value;
   const scoreMax = document.getElementById('filter-score-max').value;
   const rejected = document.getElementById('filter-rejected').value;
+  const closed = document.getElementById('filter-closed').value;
 
-  const params = new URLSearchParams({ status, category, platform, sort, search, min_salary: salary, rejected });
+  const params = new URLSearchParams({ status, category, platform, sort, search, min_salary: salary, rejected, closed });
   if (connection) params.set('has_connection', 'true');
   if (hideAppliedCos) params.set('hide_applied_cos', 'true');
   if (scoreMin) params.set('min_score', scoreMin);
@@ -437,7 +449,10 @@ async function loadJobs() {
   list.innerHTML = jobs.map(j => {
     const sc = scoreClass(j.score);
     const STATUS_PILL = { rejected: 'scored out', queued: 'queued', applied: 'applied', new: 'new', filtered: 'filtered' };
-    const statusPill = `<span class="status-pill ${j.status}">${STATUS_PILL[j.status] || j.status}</span>${j.rejected ? '<span class="status-pill rejected-me">rejected by me</span>' : ''}`;
+    const closedPill = j.posting_closed
+      ? `<span class="status-pill posting-closed" title="This posting dropped out of the company's live feed, so it looks closed.${j.company_open_roles ? ' ' + j.company_open_roles + ' other role(s) still open here.' : ''}">🔴 posting closed${j.company_open_roles ? ' · ' + j.company_open_roles + ' open here' : ''}</span>`
+      : '';
+    const statusPill = `<span class="status-pill ${j.status}">${STATUS_PILL[j.status] || j.status}</span>${j.rejected ? '<span class="status-pill rejected-me">rejected by me</span>' : ''}${closedPill}`;
     const strengthsHtml = j.strengths.length
       ? `<div class="detail-col"><h4>Strengths</h4><ul>${j.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>`
       : '';

@@ -5,6 +5,7 @@ import os
 import sqlite3
 import subprocess
 import threading
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -287,6 +288,7 @@ def get_jobs(
     has_connection: bool = False,
     hide_applied_cos: bool = False,
     rejected: str = "hide",
+    closed: str = "all",
 ):
     conn = get_db()
     referrals = load_referrals()
@@ -365,6 +367,20 @@ def get_jobs(
             "salary_min": ar["salary_min"], "salary_max": ar["salary_max"],
         })
 
+    # A posting is "closed" once it drops out of the company's live feed: the daily
+    # fetch refreshes last_seen_at for every currently-listed job, so a stale value
+    # means the role is no longer open. (Reliable because it comes from the board
+    # API, not the JS-rendered page.) Use 4 days to tolerate a missed daily run.
+    CLOSED_CUTOFF = (datetime.utcnow() - timedelta(days=4)).isoformat()
+    # Count of still-open (recently-seen, not-removed) roles per company, so a
+    # closed applied role can point you to what's still open to reapply to.
+    open_roles_by_company: dict[str, int] = {}
+    for orow in conn.execute(
+        "SELECT company, COUNT(*) c FROM jobs WHERE removed=0 AND last_seen_at >= ? GROUP BY company",
+        (CLOSED_CUTOFF,),
+    ).fetchall():
+        open_roles_by_company[orow["company"]] = orow["c"]
+
     jobs = []
     for r in rows:
         j = dict(r)
@@ -374,6 +390,11 @@ def get_jobs(
         j["also_applied"] = [
             a for a in applied_by_company.get(j["company"], []) if a["title"] != j["title"]
         ]
+        # Posting closed? (dropped out of the live feed) + how many roles the
+        # company still has open (for reapply-elsewhere prompts).
+        lsa = j.get("last_seen_at")
+        j["posting_closed"] = (not lsa) or (lsa < CLOSED_CUTOFF)
+        j["company_open_roles"] = open_roles_by_company.get(j["company"], 0)
         # Check if PDFs exist
         import re
         def slugify(t):
@@ -383,6 +404,11 @@ def get_jobs(
         j["materials_path"] = str(app_dir) if j["has_materials"] else None
         j["connections"] = referrals.get(j["company"], [])
         jobs.append(j)
+
+    if closed == "only":
+        jobs = [j for j in jobs if j["posting_closed"]]
+    elif closed == "hide":
+        jobs = [j for j in jobs if not j["posting_closed"]]
 
     return jobs
 
