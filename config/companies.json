@@ -7027,5 +7027,10 @@
     "name": "Hevo Data",
     "platform": "lever",
     "slug": "hevo"
+  },
+  {
+    "name": "Gable",
+    "platform": "workable",
+    "slug": "gable"
   }
 ]
