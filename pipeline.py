@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import click
@@ -219,6 +220,12 @@ def fetch():
 
     console.print(f"\nFound [green]{len(jobs)}[/green] total jobs. Saving new ones...")
 
+    # Capture the run boundary BEFORE saving: save_job stamps last_seen_at = now on
+    # every job present this run, so jobs with last_seen_at >= run_start are "seen
+    # this run". Companies that returned >=1 job are the boards that fetched healthily.
+    run_start = datetime.utcnow().isoformat()
+    healthy_companies = {job["company"] for job in jobs}
+
     new_count = 0
     dup_count = 0
     for job in jobs:
@@ -239,8 +246,12 @@ def fetch():
         else:
             dup_count += 1
 
+    # Update consecutive-miss streaks (blip-proof closed detection), then archive
+    # queued roles missing from 3 consecutive healthy fetches. archive_stale_jobs
+    # (14-day calendar) remains the backstop for everything else.
+    database.update_miss_counters(run_start, healthy_companies)
     stale = database.archive_stale_jobs()
-    closed_q = database.archive_closed_queued_jobs()
+    closed_q = database.archive_queued_by_misses(threshold=3)
     regenerate_company_lists()  # keep the shareable lists in sync with companies.json
     console.print(
         f"\n[bold green]Done![/bold green] "

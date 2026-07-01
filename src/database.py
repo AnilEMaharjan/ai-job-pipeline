@@ -8,7 +8,7 @@ from typing import Any
 
 DB_PATH = Path(__file__).parent.parent / "data" / "jobs.db"
 
-STALE_DAYS = 21  # jobs not seen in 21 days are considered closed
+STALE_DAYS = 14  # jobs not seen in 14 days are considered closed
 
 
 def get_connection() -> sqlite3.Connection:
@@ -34,6 +34,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
         "rejected":     "ALTER TABLE jobs ADD COLUMN rejected INTEGER NOT NULL DEFAULT 0",
         "reject_reason": "ALTER TABLE jobs ADD COLUMN reject_reason TEXT",
         "posted_at":    "ALTER TABLE jobs ADD COLUMN posted_at TEXT",
+        "consecutive_misses": "ALTER TABLE jobs ADD COLUMN consecutive_misses INTEGER NOT NULL DEFAULT 0",
     }
     for col, sql in migrations.items():
         if col not in cols:
@@ -70,7 +71,8 @@ def init_db() -> None:
                 fetched_at      TEXT NOT NULL,
                 last_seen_at    TEXT,
                 posted_at       TEXT,
-                scored_at       TEXT
+                scored_at       TEXT,
+                consecutive_misses INTEGER NOT NULL DEFAULT 0
             );
 
             CREATE TABLE IF NOT EXISTS applications (
@@ -216,6 +218,55 @@ def archive_stale_jobs(days: int = STALE_DAYS) -> int:
             AND removed = 0
             """,
             (cutoff,),
+        )
+        return cursor.rowcount
+
+
+def update_miss_counters(run_start: str, healthy_companies: set[str]) -> None:
+    """Update each active job's consecutive-miss streak after a fetch.
+
+    A job is counted as a "miss" only when its board fetched successfully this run
+    (company is in `healthy_companies`) but the job was NOT seen — i.e. its
+    last_seen_at predates this run. Jobs that WERE seen reset to 0. Jobs whose board
+    failed or returned nothing are left untouched, so a board outage never inflates
+    the streak (the blip guard). `run_start` is the ISO timestamp captured before
+    save_job stamped last_seen_at on the jobs present this run.
+    """
+    if not healthy_companies:
+        return
+    placeholders = ",".join("?" for _ in healthy_companies)
+    params = list(healthy_companies)
+    with get_connection() as conn:
+        # Missed this run (board healthy, but job absent): increment streak.
+        conn.execute(
+            f"""
+            UPDATE jobs SET consecutive_misses = consecutive_misses + 1
+            WHERE company IN ({placeholders})
+            AND status NOT IN ('applied')
+            AND removed = 0
+            AND (last_seen_at IS NULL OR last_seen_at < ?)
+            """,
+            (*params, run_start),
+        )
+        # Seen this run (stamped at/after run_start): reset streak.
+        conn.execute(
+            "UPDATE jobs SET consecutive_misses = 0 WHERE last_seen_at >= ?",
+            (run_start,),
+        )
+
+
+def archive_queued_by_misses(threshold: int = 3) -> int:
+    """Archive queued roles absent from `threshold` consecutive HEALTHY fetches.
+
+    Replaces the old calendar-day window for queued jobs: blip-proof (a transient
+    404 or one missed run is a single miss, never enough) and snappier (genuinely
+    closed roles clear in ~`threshold` days). Applied roles are never touched.
+    """
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "UPDATE jobs SET removed = 1 "
+            "WHERE status = 'queued' AND removed = 0 AND consecutive_misses >= ?",
+            (threshold,),
         )
         return cursor.rowcount
 
