@@ -281,7 +281,7 @@ def get_jobs(
     category: str = "",
     platform: str = "",
     search: str = "",
-    sort: str = "score",
+    sort: str = "posted_desc",
     min_score: int = 0,
     max_score: int = 0,
     min_salary: int = 0,
@@ -353,9 +353,10 @@ def get_jobs(
         "score": "ORDER BY COALESCE(score, 0) DESC",
         "date":  "ORDER BY last_seen_at DESC",
         "company": "ORDER BY company ASC",
-        "posted_desc": "ORDER BY COALESCE(posted_at, fetched_at) DESC",
+        # Newest posting day first, then best score within the same day.
+        "posted_desc": "ORDER BY DATE(COALESCE(posted_at, fetched_at)) DESC, COALESCE(score, 0) DESC",
         "posted_asc":  "ORDER BY COALESCE(posted_at, fetched_at) ASC",
-    }.get(sort, "ORDER BY COALESCE(score, 0) DESC")
+    }.get(sort, "ORDER BY DATE(COALESCE(posted_at, fetched_at)) DESC, COALESCE(score, 0) DESC")
 
     query += f" {order} LIMIT 200"
     rows = conn.execute(query, params).fetchall()

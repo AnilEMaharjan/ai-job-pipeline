@@ -233,9 +233,9 @@
   <span class="filter-group">
     <span class="filter-label">Sort</span>
     <select id="filter-sort" onchange="loadJobs()">
+      <option value="posted_desc" selected>Posted (newest), then score</option>
       <option value="score">Score</option>
       <option value="date">Most recently seen</option>
-      <option value="posted_desc">Posted (newest)</option>
       <option value="posted_asc">Posted (oldest)</option>
       <option value="company">Company</option>
     </select>
@@ -357,7 +357,7 @@ function resetToStatus(status) {
   document.getElementById('filter-platform').value = '';
   document.getElementById('filter-connection').checked = false;
   document.getElementById('filter-hide-applied-cos').checked = false;
-  document.getElementById('filter-sort').value = 'score';
+  document.getElementById('filter-sort').value = 'posted_desc';
   document.getElementById('filter-search').value = '';
   document.getElementById('filter-salary').value = '0';
   document.getElementById('filter-score-min').value = '';
