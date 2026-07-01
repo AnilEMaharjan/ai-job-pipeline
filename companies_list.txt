@@ -69,6 +69,7 @@ Analytic Partners
 Anaplan
 Anchorage Digital
 Andela
+Angi
 Angle Health
 Ankorstore
 Anomalo
@@ -119,6 +120,7 @@ AWeber
 Axiom
 Axonius
 Babylist
+Bamboo Health
 BambooHR
 Bandwidth
 Basecamp
@@ -328,6 +330,7 @@ Decimal
 Deel
 Deepgram
 Deepnote
+Default
 Definitive Healthcare
 Deloitte
 Delphi
@@ -470,7 +473,9 @@ FullStory
 Fundraise Up
 Future
 G2
+Gable
 Gainsight
+Galileo
 GameChanger
 Gamma
 Garner Health
@@ -549,6 +554,7 @@ HelloSign
 HelpScout
 Herald
 Heron Data
+Hevo Data
 Hex
 Hex Technologies
 HeyGen
@@ -557,6 +563,7 @@ HHAeXchange
 HiBob
 HiddenLayer
 Highbeam
+HighLevel
 Highnote
 HighRadius
 Highspot
@@ -631,6 +638,7 @@ Justworks
 Kalepa
 Kalshi
 Karat
+Kard
 Kasa
 Kayak
 Keap
@@ -640,6 +648,7 @@ Kestra
 Khan Academy
 Khoros
 Kikoff
+Kin
 Kinaxis
 Kindbody
 King
@@ -713,6 +722,7 @@ Luxury Presence
 Lyft
 Lyra Health
 M1 Finance
+MadKudu
 Magical
 Magnite
 Mailchimp
@@ -1117,6 +1127,7 @@ Socket
 Socure
 Soda Data
 SoFi
+Solv
 SonderMind
 Sourcegraph
 Spade

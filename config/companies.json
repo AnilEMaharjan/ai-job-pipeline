@@ -7047,5 +7047,35 @@
     "name": "MadKudu",
     "platform": "breezy",
     "slug": "madkudu"
+  },
+  {
+    "name": "HighLevel",
+    "platform": "lever",
+    "slug": "gohighlevel"
+  },
+  {
+    "name": "Kard",
+    "platform": "greenhouse",
+    "slug": "kardfinancialinc"
+  },
+  {
+    "name": "Bamboo Health",
+    "platform": "rippling",
+    "slug": "bamboo-health-careers"
+  },
+  {
+    "name": "Angi",
+    "platform": "ashby",
+    "slug": "angi"
+  },
+  {
+    "name": "Kin",
+    "platform": "ashby",
+    "slug": "kin"
+  },
+  {
+    "name": "Coursera",
+    "platform": "greenhouse",
+    "slug": "sourcingcour"
   }
 ]
