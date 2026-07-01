@@ -1,6 +1,7 @@
 # ── Secrets ──────────────────────────────────────────────
 .env
 config/service_account.json
+.infisical.json
 
 # ── Personal data (use the .example templates instead) ───
 config/resume.json
@@ -26,3 +27,4 @@ build/
 .DS_Store
 .claude/
 config/candidate_notes.md
+.env.bak

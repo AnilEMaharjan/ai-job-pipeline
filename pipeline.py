@@ -13,8 +13,12 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 
-# Load .env from project root before importing modules
-load_dotenv(Path(__file__).parent / ".env", override=True)
+# Secrets come from Infisical: run via `infisical run --path=/job-pipeline -- ...`,
+# which injects them into the environment. A local .env is an optional fallback only
+# (e.g. offline); never let it override what Infisical already injected.
+_env_file = Path(__file__).parent / ".env"
+if _env_file.exists():
+    load_dotenv(_env_file, override=False)
 
 # Add TinyTeX to PATH for pdflatex
 _tinytex = Path.home() / "Library/TinyTeX/bin/universal-darwin"

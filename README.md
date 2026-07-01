@@ -124,7 +124,7 @@ letter mentions anything you couldn't defend in an interview, cut it.
 - **Companies** — `config/companies.json` is a flat list of `{name, platform, slug}`. Verify a slug works by hitting the board API directly (e.g. `https://boards-api.greenhouse.io/v1/boards/{slug}/jobs`). Set `"active": false` to pause a company without deleting it.
 - **Title filters** — `TITLE_KEYWORDS` / `TITLE_EXCLUDES` in `pipeline.py` control what reaches (paid) AI scoring.
 - **Scoring rubric** — the prompt in `src/matcher.py` defines what "fit" means; edit it to match your own profile and dealbreakers.
-- **Threshold** — `SCORE_THRESHOLD` in `.env` (default 70) sets the queue bar.
+- **Threshold** — `SCORE_THRESHOLD` (Infisical secret at `/job-pipeline`, default 70) sets the queue bar.
 
 ## Security
 
@@ -135,4 +135,4 @@ The dashboard has **no authentication** — anyone who can reach the port can re
 
 ## Privacy
 
-All personal data stays local and gitignored: `.env` (API key), `config/resume.json`, `config/personal.json`, `data/` (job database), `applications/` (generated materials), and `referral_map.csv`. The repo ships only code, the company list, and `.example` templates.
+Secrets are managed in **Infisical** (path `/job-pipeline`); run commands via `infisical run --path=/job-pipeline -- python pipeline.py ...`. All other personal data stays local and gitignored: `config/resume.json`, `config/personal.json`, `data/` (job database), `applications/` (generated materials), and `referral_map.csv`. The repo ships only code, the company list, and `.example` templates. (A local `.env` is an optional offline fallback only.)

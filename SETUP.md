@@ -18,8 +18,15 @@ Run `./setup.sh` (or perform its steps manually: create `.venv`, `pip install -r
 requirements.txt`, copy the three `.example` config files). If the user is on
 Windows, do the equivalent manually — the script is bash-only.
 
-Ask the user for their **Anthropic API key** and put it in `.env` as
-`ANTHROPIC_API_KEY=...`. Never commit this file.
+Secrets are managed in **Infisical** (path `/job-pipeline`), not a committed file.
+Run every command through Infisical so the API key is injected into the environment:
+
+```
+infisical run --path=/job-pipeline -- python pipeline.py <command>
+```
+
+Make sure `ANTHROPIC_API_KEY` exists at that path (`infisical secrets --path=/job-pipeline`).
+A local `.env` is supported only as an optional offline fallback and is never committed.
 
 ### 2. Build their resume.json (the important step)
 
@@ -88,12 +95,13 @@ Only record what they actually say; confirm anything you're unsure about.
 
 ```bash
 source .venv/bin/activate
-python pipeline.py fetch       # expect: thousands of jobs found, some 404s are normal
-python pipeline.py score       # expect: pre-filter skips most; the rest get scored
-python pipeline.py dashboard   # expect: dashboard at http://localhost:8766
+infisical run --path=/job-pipeline -- python pipeline.py fetch       # expect: thousands of jobs found, some 404s are normal
+infisical run --path=/job-pipeline -- python pipeline.py score       # expect: pre-filter skips most; the rest get scored
+infisical run --path=/job-pipeline -- python pipeline.py dashboard   # expect: dashboard at http://localhost:8766
 ```
 
-If scoring errors with an auth message, the API key in `.env` is wrong.
+If scoring errors with an auth message, `ANTHROPIC_API_KEY` is missing or wrong at
+Infisical path `/job-pipeline` (check `infisical secrets --path=/job-pipeline`).
 If PDFs fail, `pdflatex` is missing — install TinyTeX and run
 `tlmgr install roboto fontaxes needspace parskip`.
 
