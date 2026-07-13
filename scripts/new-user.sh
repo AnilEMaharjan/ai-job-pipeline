@@ -92,11 +92,16 @@ cat <<DONE
    Folder:    $DEST
 
 Next:
-  1. Fill in their profile:
-       $DEST/config/resume.json, personal.json, candidate_notes.md
-  2. Seed data (first run):
+  1. Invite them to your Tailscale network, then send them the URL above.
+  2. They set up their own profile in the browser: ⚙ Profile -> Resume (upload +
+     Parse with AI), Personal, Notes, Title Filters, Scoring Rules -> Save.
+     IMPORTANT: Title Filters + Scoring Rules are per-user and NOT auto-filled --
+     without them every job title is filtered out (a loud warning prints on
+     fetch). The Profile page shows the .example templates as a starting point;
+     they must edit + Save before anything gets scored.
+  3. They click "Fetch & Score" in the header for their first run (or you can:
        cd $DEST && ./.venv/bin/python pipeline.py fetch && ./.venv/bin/python pipeline.py score
-  3. Invite them to your Tailscale network, then send them the URL above.
+     ).
 
 Logs: $DEST/dashboard.log , $DEST/daily.log
 DONE

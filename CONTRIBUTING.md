@@ -28,15 +28,24 @@ cp config/candidate_notes.example.md config/candidate_notes.md
 - `config/resume.json` — drives scoring, tailoring, and PDF output. The most important file.
 - `config/personal.json` — name/contact/links.
 - `config/candidate_notes.md` — living memory the generator reads each run.
+- `config/title_filters.json` — which job titles reach (paid) AI scoring at all. **Required** —
+  with no file, every title is filtered out (a warning prints on `fetch`). Not domain-specific:
+  set your own include/exclude keywords for your target titles.
+- `config/scoring_rules.md` — plain-English persona, remote/location preferences, and domain
+  dealbreakers, inserted into every scoring prompt. Optional (falls back to generic scoring
+  against your resume with no extra calibration), but worth writing.
 
 Easiest path: run the dashboard (`infisical run --path=/job-pipeline -- python pipeline.py dashboard`),
-click **⚙ Profile**, and upload your resume (PDF or .txt) — **✨ Parse with AI** converts
-it to `resume.json` for you (review before saving). Fill in `personal.json`/notes on
-the other two tabs, same page. Or hand-edit the files directly / use
-`scripts/import_resume.py <file>` from the CLI — same conversion, no browser needed.
+click **⚙ Profile**. Resume tab: upload a PDF/text resume — **✨ Parse with AI** converts
+it to `resume.json` for you (review before saving). Fill in Personal/Notes on their tabs, same
+page. **Title Filters** and **Scoring Rules** tabs show the `.example` templates as a starting
+point (with a ⚠ note that they aren't saved yet) — edit to your own titles/persona and Save.
+Or hand-edit the files directly / use `scripts/import_resume.py <file>` for the resume from the
+CLI — same conversion, no browser needed.
 
-> The repo ships code only. `config/*.json`, `config/candidate_notes.md`, `data/`,
-> `applications/`, and `referral_map.csv` are gitignored, so you start with your own.
+> The repo ships code only. `config/*.json` (except `.example` files), `config/candidate_notes.md`,
+> `config/scoring_rules.md`, `data/`, `applications/`, and `referral_map.csv` are gitignored, so
+> you start with your own.
 
 ## 3. Secrets (Infisical — this is the #1 gotcha)
 There is **no `.env`**. Every command runs through Infisical, which injects

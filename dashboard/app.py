@@ -22,6 +22,10 @@ RESUME_JSON = CONFIG_DIR / "resume.json"
 PERSONAL_JSON = CONFIG_DIR / "personal.json"
 CANDIDATE_NOTES = CONFIG_DIR / "candidate_notes.md"
 RESUME_EXAMPLE = CONFIG_DIR / "resume.example.json"
+TITLE_FILTERS_JSON = CONFIG_DIR / "title_filters.json"
+TITLE_FILTERS_EXAMPLE = CONFIG_DIR / "title_filters.example.json"
+SCORING_RULES_MD = CONFIG_DIR / "scoring_rules.md"
+SCORING_RULES_EXAMPLE = CONFIG_DIR / "scoring_rules.example.md"
 
 # PDF filenames are derived from the applicant's name in config/resume.json.
 # mtime-cached (like load_referrals below) so a Profile-page save is picked up
@@ -575,11 +579,25 @@ def get_profile():
         except FileNotFoundError:
             return default
 
+    def read_real_or_example(real: Path, example: Path, default: str) -> str:
+        # Title filters / scoring rules aren't required to exist yet (a fresh
+        # instance filters out everything until configured -- see
+        # load_title_filters() in pipeline.py). Show the .example content as
+        # a starting template in that case, rather than a blank box.
+        try:
+            return real.read_text()
+        except FileNotFoundError:
+            return read_or(example, default)
+
     return {
         "resume": read_or(RESUME_JSON, ""),
         "personal": read_or(PERSONAL_JSON, "{}\n"),
         "notes": read_or(CANDIDATE_NOTES, ""),
         "has_resume": RESUME_JSON.exists(),
+        "title_filters": read_real_or_example(TITLE_FILTERS_JSON, TITLE_FILTERS_EXAMPLE, "{}\n"),
+        "title_filters_is_template": not TITLE_FILTERS_JSON.exists(),
+        "scoring_rules": read_real_or_example(SCORING_RULES_MD, SCORING_RULES_EXAMPLE, ""),
+        "scoring_rules_is_template": not SCORING_RULES_MD.exists(),
     }
 
 
@@ -617,12 +635,12 @@ def parse_resume_upload(file: UploadFile | None = None, text: str = ""):
 
 @app.post("/api/profile/save")
 async def save_profile(request: Request):
-    """Save the profile editor's three fields. Each is optional — only provided
-    (non-null) fields are written. resume/personal must be valid JSON text;
-    notes is saved as-is (markdown)."""
+    """Save the profile editor's fields. Each is optional — only provided
+    (non-null) fields are written. resume/personal/title_filters must be
+    valid JSON text; notes/scoring_rules are saved as-is (plain text)."""
     body = await request.json()
     errors = {}
-    parsed_resume = parsed_personal = None
+    parsed_resume = parsed_personal = parsed_title_filters = None
 
     if body.get("resume") is not None:
         try:
@@ -634,6 +652,13 @@ async def save_profile(request: Request):
             parsed_personal = json.loads(body["personal"])
         except json.JSONDecodeError as e:
             errors["personal"] = f"Invalid JSON: {e}"
+    if body.get("title_filters") is not None:
+        try:
+            parsed_title_filters = json.loads(body["title_filters"])
+            if not isinstance(parsed_title_filters, dict):
+                raise ValueError("must be a JSON object with include_keywords/exclude_keywords")
+        except (json.JSONDecodeError, ValueError) as e:
+            errors["title_filters"] = f"Invalid JSON: {e}"
     if errors:
         return JSONResponse({"ok": False, "errors": errors}, status_code=400)
 
@@ -644,6 +669,10 @@ async def save_profile(request: Request):
         PERSONAL_JSON.write_text(json.dumps(parsed_personal, indent=2) + "\n")
     if body.get("notes") is not None:
         CANDIDATE_NOTES.write_text(body["notes"])
+    if parsed_title_filters is not None:
+        TITLE_FILTERS_JSON.write_text(json.dumps(parsed_title_filters, indent=2) + "\n")
+    if body.get("scoring_rules") is not None:
+        SCORING_RULES_MD.write_text(body["scoring_rules"])
 
     return {"ok": True}
 

@@ -28,7 +28,11 @@ echo "✓ dependencies installed"
 [ -f .env ] || cp .env.example .env
 [ -f config/resume.json ] || cp config/resume.example.json config/resume.json
 [ -f config/personal.json ] || cp config/personal.example.json config/personal.json
+[ -f config/candidate_notes.md ] || cp config/candidate_notes.example.md config/candidate_notes.md
 echo "✓ config files in place"
+echo "  (title_filters.json / scoring_rules.md are optional -- without them, every job"
+echo "   title is filtered out until you set them up via the dashboard's Profile page,"
+echo "   or copy config/title_filters.example.json and config/scoring_rules.example.md)"
 
 # 4. API key
 if grep -q "sk-ant-\.\.\." .env; then

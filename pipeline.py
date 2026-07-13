@@ -45,59 +45,38 @@ APPLICATIONS_DIR = Path(__file__).parent / "applications"
 SCORE_THRESHOLD = int(os.environ.get("SCORE_THRESHOLD", "70"))
 
 
-TITLE_KEYWORDS = {
-    "analytics", "analytical", "analyst", "business intelligence",
-    "revenue operations", "revenue strategy", "revops", "rev ops",
-    "marketing operations", "marketing analytics",
-    "insights", "reporting", "gtm",
-    "warehouse", "etl", "elt", "dbt", "snowflake", "bigquery", "orchestrat",
-    "metrics", "attribution", "instrumentation",
-    "finance manager", "finance director", "finance lead",
-    # Broadened: finance/FP&A roles (CPA-relevant) and analytics-adjacent titles
-    "strategic finance", "financial planning", "fp&a", "financial analyst",
-    "business operations", "biz ops", "bizops", "growth analyst", "data science",
-    # "data" and "scientist" checked separately below to avoid substring false positives
-}
+# Title filters are per-user config (config/title_filters.json), not hardcoded,
+# so each person hosted on this app can target their own titles/dealbreakers
+# without editing Python. See config/title_filters.example.json for the shape.
+_title_filters_cache: dict | None = None
 
-TITLE_EXCLUDES = {
-    "frontend", "front-end", "front end", "mobile", "ios", "android",
-    "backend", "back-end", "back end",
-    "full stack engineer", "full stack developer", "full stack software",
-    "fullstack engineer", "fullstack developer", "full-stack engineer", "full-stack developer",
-    "security engineer", "infrastructure engineer", "devops", "sre",
-    "recruiter", "recruiting", "talent acquisition", "legal", "counsel",
-    "designer", "design", "brand", "content writer", "copywriter",
-    "account executive", "account manager", "sales development",
-    "intern", "internship",
-    "program manager",
-    "research scientist",
-    "compliance", "regulatory",
-    "fraud",
-    "underwr",
-    "credit risk",
-    "compensation",
-    "supportability",
-    "enforcement",
-    "bilingual",
-    "emea",
-    "decision scientist",
-    "sales enablement", "revenue enablement",  # narrowed: don't exclude finance/data "enablement" roles
-    "staff scientist",
-    "site reliability",
-    "temporary", "(temp)", "contractor", "contract role", "freelance",
-    "fixed term", "fixed-term", "hourly",
-    "analyst i,", "analyst ii,", "analyst 1", "analyst 2",
-    " associate,", " associate -",
-    "product marketing",
-    "software architect",
-    "machine learning engineer",
-    "database reliability",
-    "qa engineer",
-    "billing ar",
-    "data center",
-    "product manager",
-    "people analytics",
-}
+
+def load_title_filters() -> dict:
+    """Load config/title_filters.json (lazy, cached). Falls back to an empty
+    filter set if the file is missing -- NOTE: with no include_keywords, no
+    title can match, so is_relevant_title() rejects everything until the
+    user sets this up (via the Profile page or by hand). That's the safe
+    default (never silently score/spend on unconfigured jobs), but warn
+    loudly so a fresh instance doesn't look like it's just broken."""
+    global _title_filters_cache
+    if _title_filters_cache is None:
+        path = CONFIG_DIR / "title_filters.json"
+        try:
+            with open(path) as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            console.print(
+                "[yellow]Warning:[/yellow] config/title_filters.json not found -- "
+                "every job title will be filtered out until you set this up "
+                "(Profile page → Title Filters, or copy config/title_filters.example.json)."
+            )
+            data = {}
+        _title_filters_cache = {
+            "include_keywords": set(data.get("include_keywords", [])),
+            "exclude_keywords": set(data.get("exclude_keywords", [])),
+            "whole_word_keywords": set(data.get("whole_word_keywords", [])),
+        }
+    return _title_filters_cache
 
 INTERNATIONAL_INDICATORS = {
     "canada", "uk", "united kingdom", "germany", "france", "australia",
@@ -124,15 +103,15 @@ def is_remote_description(description: str) -> bool:
 
 def is_relevant_title(title: str) -> bool:
     import re
+    filters = load_title_filters()
     t = title.lower()
-    if any(ex in t for ex in TITLE_EXCLUDES):
+    if any(ex in t for ex in filters["exclude_keywords"]):
         return False
-    if any(kw in t for kw in TITLE_KEYWORDS):
+    if any(kw in t for kw in filters["include_keywords"]):
         return True
-    # Whole-word check for short/ambiguous keywords
-    if re.search(r'\bdata\b', t) or re.search(r'\bscientist\b', t):
-        return True
-    return False
+    # Whole-word check for short/ambiguous keywords (e.g. "data" would
+    # false-positive as a substring of "database").
+    return any(re.search(rf'\b{re.escape(w)}\b', t) for w in filters["whole_word_keywords"])
 
 
 def is_us_location(location: str) -> bool:

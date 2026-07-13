@@ -47,6 +47,15 @@ two launchd services (dashboard + daily fetch/score). Then:
      (PDF or .txt) → **✨ Parse with AI** converts it to the app's schema →
      they review/edit the JSON → **💾 Save Profile**.
    - They also fill in the **Personal** and **Notes** tabs (same page).
+   - **Title Filters** and **Scoring Rules** tabs are the important ones for a
+     new domain (e.g. a friend in marketing, not data/analytics): these decide
+     which job titles even reach AI scoring, and what "good fit" means for
+     their career. The page shows the generic `.example` template as a
+     starting point (with a ⚠ note that it isn't saved yet) — they should edit
+     it to their own titles/persona/dealbreakers, then Save. **Without this,
+     every job title is filtered out** (a loud warning prints on fetch) — this
+     is deliberate (never silently score jobs against unconfigured filters),
+     but it means a friend who skips this step will see zero results.
    - Click **⟳ Fetch & Score** in the header to run their first fetch + scoring pass.
 
 Give each friend a **different port** (8767, 8768, 8769, …).

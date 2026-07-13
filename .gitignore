@@ -6,6 +6,8 @@ config/service_account.json
 # ── Personal data (use the .example templates instead) ───
 config/resume.json
 config/personal.json
+config/title_filters.json
+config/scoring_rules.md
 applications/
 data/
 logs/

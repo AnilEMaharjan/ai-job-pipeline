@@ -515,6 +515,8 @@ function openProfileModal() {
         <div class="profile-tab active" data-tab="resume" onclick="profileTab('resume')">Resume</div>
         <div class="profile-tab" data-tab="personal" onclick="profileTab('personal')">Personal</div>
         <div class="profile-tab" data-tab="notes" onclick="profileTab('notes')">Notes</div>
+        <div class="profile-tab" data-tab="titles" onclick="profileTab('titles')">Title Filters</div>
+        <div class="profile-tab" data-tab="rules" onclick="profileTab('rules')">Scoring Rules</div>
       </div>
       <div class="profile-pane active" data-pane="resume">
         <div class="profile-upload-row">
@@ -530,6 +532,16 @@ function openProfileModal() {
       <div class="profile-pane" data-pane="notes">
         <textarea class="profile-textarea" id="profile-notes-text" spellcheck="false" placeholder="Living memory the generator reads every run — tools you've used, stories, personal angles, preferences..."></textarea>
       </div>
+      <div class="profile-pane" data-pane="titles">
+        <div class="profile-status" id="profile-titles-hint"></div>
+        <div class="modal-hint" style="border:none;padding:0 0 8px;margin:0;">Which job titles reach (paid) AI scoring. <code>include_keywords</code>: title needs one match. <code>exclude_keywords</code>: any match rejects it first. <code>whole_word_keywords</code>: like include, but matched as a whole word (for short words like "data").</div>
+        <textarea class="profile-textarea" id="profile-titles-text" spellcheck="false" placeholder='{"include_keywords": ["marketing", "brand"], "exclude_keywords": ["intern"], "whole_word_keywords": []}'></textarea>
+      </div>
+      <div class="profile-pane" data-pane="rules">
+        <div class="profile-status" id="profile-rules-hint"></div>
+        <div class="modal-hint" style="border:none;padding:0 0 8px;margin:0;">Plain-English notes inserted into every scoring prompt: your persona, remote/location preferences, and domain dealbreakers to penalize. No required format.</div>
+        <textarea class="profile-textarea" id="profile-rules-text" spellcheck="false" placeholder="## Candidate persona & preferences&#10;- ...&#10;&#10;## Domain dealbreakers&#10;- ..."></textarea>
+      </div>
       <div class="profile-status" id="profile-save-status"></div>
       <div class="profile-footer">
         <div class="modal-hint" style="border:none;padding:6px 0;margin:0;flex:1;">Esc or click outside to close.</div>
@@ -544,6 +556,11 @@ function openProfileModal() {
     document.getElementById('profile-resume-text').value = p.resume || '';
     document.getElementById('profile-personal-text').value = p.personal || '{}\n';
     document.getElementById('profile-notes-text').value = p.notes || '';
+    document.getElementById('profile-titles-text').value = p.title_filters || '';
+    document.getElementById('profile-rules-text').value = p.scoring_rules || '';
+    const templateNote = (label) => `<span style="color:#b45309">⚠ Showing an example template — not yet saved as your ${label}. Edit and Save to activate it.</span>`;
+    if (p.title_filters_is_template) document.getElementById('profile-titles-hint').innerHTML = templateNote('title filters');
+    if (p.scoring_rules_is_template) document.getElementById('profile-rules-hint').innerHTML = templateNote('scoring rules');
   }).catch(() => {});
 }
 function profileTab(name) {
@@ -579,6 +596,8 @@ async function saveProfile() {
   const resumeText = document.getElementById('profile-resume-text').value.trim();
   const personalText = document.getElementById('profile-personal-text').value.trim();
   const notesText = document.getElementById('profile-notes-text').value;
+  const titleFiltersText = document.getElementById('profile-titles-text').value.trim();
+  const scoringRulesText = document.getElementById('profile-rules-text').value;
   btn.disabled = true;
   status.textContent = 'Saving...'; status.className = 'profile-status';
   try {
@@ -589,6 +608,8 @@ async function saveProfile() {
         resume: resumeText || null,
         personal: personalText || null,
         notes: notesText,
+        title_filters: titleFiltersText || null,
+        scoring_rules: scoringRulesText,
       }),
     });
     const data = await res.json();

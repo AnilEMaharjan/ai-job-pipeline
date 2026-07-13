@@ -1,0 +1,15 @@
+{
+  "_comment": "Pre-filters which job postings even reach (paid) AI scoring. include_keywords: a title needs ONE of these substrings (lowercased) to pass. exclude_keywords: any match here rejects the title outright, checked BEFORE include_keywords. whole_word_keywords: like include_keywords but matched as a whole word (regex \\b), for short words that would false-positive as a substring (e.g. 'data' inside 'database'). Copy this file to config/title_filters.json and edit for YOUR target titles.",
+
+  "include_keywords": [
+    "marketing", "brand", "growth", "strategy",
+    "account director", "account strategy", "gtm"
+  ],
+
+  "exclude_keywords": [
+    "intern", "internship", "recruiter", "recruiting",
+    "temporary", "contractor", "freelance"
+  ],
+
+  "whole_word_keywords": []
+}

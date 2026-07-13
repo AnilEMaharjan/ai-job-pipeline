@@ -122,8 +122,8 @@ letter mentions anything you couldn't defend in an interview, cut it.
 ## Customizing
 
 - **Companies** — `config/companies.json` is a flat list of `{name, platform, slug}`. Verify a slug works by hitting the board API directly (e.g. `https://boards-api.greenhouse.io/v1/boards/{slug}/jobs`). Set `"active": false` to pause a company without deleting it.
-- **Title filters** — `TITLE_KEYWORDS` / `TITLE_EXCLUDES` in `pipeline.py` control what reaches (paid) AI scoring.
-- **Scoring rubric** — the prompt in `src/matcher.py` defines what "fit" means; edit it to match your own profile and dealbreakers.
+- **Title filters** — `config/title_filters.json` (per-user, gitignored; template at `config/title_filters.example.json`, or edit via the dashboard's Profile → Title Filters tab) controls which job titles reach (paid) AI scoring. Without it, every title is filtered out — see `config/title_filters.example.json` for the shape.
+- **Scoring rubric** — the fixed rubric/format lives in `src/matcher.py`; your persona, remote/location preferences, and dealbreakers go in `config/scoring_rules.md` (per-user, gitignored; template at `config/scoring_rules.example.md`, or edit via Profile → Scoring Rules) so they're not hardcoded to one person's career.
 - **Threshold** — `SCORE_THRESHOLD` (Infisical secret at `/job-pipeline`, default 70) sets the queue bar.
 
 ## Security

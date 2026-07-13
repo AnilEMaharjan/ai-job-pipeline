@@ -4,13 +4,20 @@ import json
 import os
 import re
 import time
+from pathlib import Path
 from typing import Any
 
 import anthropic
 
 MODEL = "claude-sonnet-4-6"
 
-SYSTEM_PROMPT_TEMPLATE = """You are an expert technical recruiter evaluating fit between a candidate and a job posting.
+_CONFIG_DIR = Path(__file__).resolve().parent.parent / "config"
+
+# The scoring rubric/format is fixed and generic (works for anyone); the
+# {calibration_rules} block is per-user (config/scoring_rules.md) -- persona,
+# remote/location preferences, and domain dealbreakers, all in plain English.
+# See config/scoring_rules.example.md for guidance on writing your own.
+SYSTEM_PROMPT_TEMPLATE = """You are an expert recruiter evaluating fit between a candidate and a job posting.
 
 Here is the candidate's resume (treat this as cached context — it does not change between evaluations):
 
@@ -32,17 +39,28 @@ Scoring guide:
 - 55-69: Partial match. Meaningful overlap but real gaps in domain, seniority, or key tools.
 - 0-54: Poor match. Fundamentally different role, domain, or required experience.
 
-Important calibration rules:
-- The candidate is an analytics engineer / data engineer who is ALSO a strong GTM-strategy and revenue-operations operator (ran a CPQ + ARR migration, overhauled outcomes-focused leadership reporting). Score relative to that hybrid persona, not a generic software engineer.
-- Do NOT penalize for location. All jobs in this pipeline are remote-eligible; any state restrictions in the job description should be ignored.
-- Do NOT penalize for minor tool gaps (e.g. AWS Glue, Spark, Presto). These are learnable; only flag them in "missing" if they are clearly central to the role.
+General calibration:
+- Do NOT penalize for minor tool gaps that are learnable on the job; only flag them in "missing" if they are clearly central to the role.
 - Do NOT penalize for being 1-2 years short of a stated years-of-experience requirement. Depth of experience matters more than raw years.
-- DO heavily penalize (score below 40) if the role requires in-office or hybrid attendance — e.g. "X days per week in office", "hybrid", "onsite required", "must be located in [city]". The candidate requires fully remote.
-- DO penalize for fundamental domain mismatches: e.g. a pure ML research role, a healthcare fraud investigator role, a financial planning analyst role, or a software infrastructure role with no data/analytics component.
-- DO heavily penalize (score below 55) roles whose CORE responsibility is RevOps operations administration rather than data/analytics/strategy — specifically: running or overseeing a Deal Desk, owning quote-to-cash / revenue lifecycle DESIGN, CPQ administration, or sales-commission/territory operations as the primary function. The candidate did a CPQ migration as a project but does NOT want a deal-desk-operator or revenue-lifecycle-design role. A role that merely MENTIONS these among many duties is fine; only penalize when they are clearly central.
 - A score of 70+ means: "this candidate would plausibly get a phone screen for this role."
 
+{calibration_rules}
+
 Only output JSON — no preamble, no markdown fences."""
+
+_DEFAULT_CALIBRATION_RULES = (
+    "No additional calibration rules provided for this candidate — "
+    "score generically against the resume above."
+)
+
+
+def _load_calibration_rules() -> str:
+    path = _CONFIG_DIR / "scoring_rules.md"
+    try:
+        text = path.read_text().strip()
+    except FileNotFoundError:
+        return _DEFAULT_CALIBRATION_RULES
+    return text or _DEFAULT_CALIBRATION_RULES
 
 
 def _resume_to_text(resume_json: dict[str, Any]) -> str:
@@ -99,7 +117,9 @@ def score_job(
         client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     resume_text = _resume_to_text(resume_json)
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(resume_text=resume_text)
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+        resume_text=resume_text, calibration_rules=_load_calibration_rules()
+    )
 
     job_description = job.get("description", "")[:8000]  # Trim very long JDs
     title = job.get("title", "Unknown Role")
