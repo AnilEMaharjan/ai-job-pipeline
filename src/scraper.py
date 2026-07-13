@@ -156,8 +156,11 @@ HEADERS = {
 }
 
 
-async def fetch_greenhouse_jobs(slug: str) -> list[dict[str, Any]]:
-    """Fetch jobs from a Greenhouse job board. Returns list of {title, url, description}."""
+async def fetch_greenhouse_jobs(slug: str, remote_required: bool = True) -> list[dict[str, Any]]:
+    """Fetch jobs from a Greenhouse job board. Returns list of {title, url, description}.
+    remote_required=True (default) keeps only postings whose location says "remote"
+    -- set False to also keep US onsite/hybrid postings (for a candidate who isn't
+    remote-only); international postings are always excluded either way."""
     url = GREENHOUSE_URL.format(slug=slug)
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS) as client:
@@ -174,7 +177,9 @@ async def fetch_greenhouse_jobs(slug: str) -> list[dict[str, Any]]:
     jobs = []
     for job in data.get("jobs", []):
         location = (job.get("location") or {}).get("name", "") or ""
-        if "remote" not in location.lower() or not _is_us_location(location):
+        if not _is_us_location(location):
+            continue
+        if remote_required and "remote" not in location.lower():
             continue
 
         # Some boards double-escape their HTML (tags arrive as &lt;div&gt;), so
@@ -243,8 +248,10 @@ def _salary_from_lever_range(rng: Any) -> tuple[int | None, int | None, str | No
     return lo, hi, raw
 
 
-async def fetch_lever_jobs(slug: str) -> list[dict[str, Any]]:
-    """Fetch jobs from a Lever job board. Returns list of {title, url, description}."""
+async def fetch_lever_jobs(slug: str, remote_required: bool = True) -> list[dict[str, Any]]:
+    """Fetch jobs from a Lever job board. Returns list of {title, url, description}.
+    remote_required=True (default) keeps only postings tagged remote -- set False
+    to also keep US onsite/hybrid postings."""
     url = LEVER_URL.format(slug=slug)
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS) as client:
@@ -262,9 +269,9 @@ async def fetch_lever_jobs(slug: str) -> list[dict[str, Any]]:
     for posting in data:
         location = (posting.get("categories") or {}).get("location", "") or ""
         workplace_type = posting.get("workplaceType", "") or ""
-        if "remote" not in location.lower() and "remote" not in workplace_type.lower():
-            continue
         if not _is_us_location(location):
+            continue
+        if remote_required and "remote" not in location.lower() and "remote" not in workplace_type.lower():
             continue
 
         # Build description from lists block
@@ -304,8 +311,10 @@ async def fetch_lever_jobs(slug: str) -> list[dict[str, Any]]:
     return jobs
 
 
-async def fetch_ashby_jobs(slug: str) -> list[dict[str, Any]]:
-    """Fetch jobs from an Ashby job board. Returns list of {title, url, description}."""
+async def fetch_ashby_jobs(slug: str, remote_required: bool = True) -> list[dict[str, Any]]:
+    """Fetch jobs from an Ashby job board. Returns list of {title, url, description}.
+    remote_required=True (default) keeps only postings marked remote -- set False
+    to also keep US onsite/hybrid postings."""
     url = ASHBY_URL.format(slug=slug)
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS) as client:
@@ -321,7 +330,7 @@ async def fetch_ashby_jobs(slug: str) -> list[dict[str, Any]]:
 
     jobs = []
     for job in data.get("jobs", []):
-        if not job.get("isRemote") and "remote" not in (job.get("location") or "").lower():
+        if remote_required and not job.get("isRemote") and "remote" not in (job.get("location") or "").lower():
             continue
         # Ashby provides a structured country; trust it over string matching when present.
         country_us = _country_is_us(
@@ -374,8 +383,10 @@ async def fetch_ashby_jobs(slug: str) -> list[dict[str, Any]]:
     return jobs
 
 
-async def fetch_recruitee_jobs(slug: str) -> list[dict[str, Any]]:
-    """Fetch jobs from a Recruitee job board. Returns list of {title, url, description, ...}."""
+async def fetch_recruitee_jobs(slug: str, remote_required: bool = True) -> list[dict[str, Any]]:
+    """Fetch jobs from a Recruitee job board. Returns list of {title, url, description, ...}.
+    remote_required=True (default) keeps only remote postings -- set False to also
+    keep US onsite/hybrid postings."""
     url = f"https://{slug}.recruitee.com/api/offers/"
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS) as client:
@@ -394,14 +405,15 @@ async def fetch_recruitee_jobs(slug: str) -> list[dict[str, Any]]:
         location = o.get("location") or ", ".join(
             filter(None, [o.get("city"), o.get("country")])
         )
-        # Recruitee exposes explicit remote/hybrid/on_site flags — use them.
-        is_remote = bool(o.get("remote")) or "remote" in (location or "").lower()
-        if not is_remote:
-            continue
-        if (o.get("hybrid") or o.get("on_site")) and not o.get("remote"):
-            continue
         if not _is_us_location(location):
             continue
+        if remote_required:
+            # Recruitee exposes explicit remote/hybrid/on_site flags — use them.
+            is_remote = bool(o.get("remote")) or "remote" in (location or "").lower()
+            if not is_remote:
+                continue
+            if (o.get("hybrid") or o.get("on_site")) and not o.get("remote"):
+                continue
 
         description = re.sub(r"<[^>]+>", " ", o.get("description", "") or "")
         description = html.unescape(re.sub(r"\s{2,}", " ", description).strip())
@@ -445,11 +457,12 @@ async def _breezy_job_description(client: httpx.AsyncClient, job_url: str) -> st
         return ""
 
 
-async def fetch_breezy_jobs(slug: str) -> list[dict[str, Any]]:
+async def fetch_breezy_jobs(slug: str, remote_required: bool = True) -> list[dict[str, Any]]:
     """Fetch jobs from a Breezy HR board ({slug}.breezy.hr). Breezy exposes a clean
     public positions feed at /json (list of {name, url, location, ...}); the JD
     lives on each server-rendered position page, which we fetch for full content.
-    Keeps US / remote roles; the score-time pre-filter refines further."""
+    Keeps US roles; remote_required=True (default) also requires a remote signal --
+    set False to also keep US onsite/hybrid postings."""
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS, follow_redirects=True) as client:
             resp = await client.get(f"https://{slug}.breezy.hr/json")
@@ -468,7 +481,7 @@ async def fetch_breezy_jobs(slug: str) -> list[dict[str, Any]]:
                 loc_str = ", ".join(x for x in [city, country] if x) or "Remote"
                 is_us = country in ("United States", "USA", "US") or _is_us_location(loc_str)
                 is_remote = "remote" in title.lower() or "remote" in loc_str.lower() or not city
-                if is_us and (is_remote or "remote" in title.lower()):
+                if is_us and (not remote_required or is_remote):
                     kept.append((p, title, loc_str))
 
             sem = asyncio.Semaphore(5)
@@ -481,7 +494,7 @@ async def fetch_breezy_jobs(slug: str) -> list[dict[str, Any]]:
 
     jobs = []
     for (p, title, loc_str), jd in zip(kept, descs, strict=True):
-        description = jd or f"{title}. Remote role in the United States. See {p.get('url','')}."
+        description = jd or f"{title}. Role in the United States ({loc_str}). See {p.get('url','')}."
         sal_min, sal_max, sal_raw = _extract_salary(description)
         jobs.append({
             "title": title,
@@ -496,9 +509,11 @@ async def fetch_breezy_jobs(slug: str) -> list[dict[str, Any]]:
     return jobs
 
 
-async def fetch_workable_jobs(slug: str) -> list[dict[str, Any]]:
+async def fetch_workable_jobs(slug: str, remote_required: bool = True) -> list[dict[str, Any]]:
     """Best-effort fetch from a Workable widget board. Workable's public API is
-    locked down per-account, so this degrades gracefully (returns [] if not open)."""
+    locked down per-account, so this degrades gracefully (returns [] if not open).
+    remote_required=True (default) keeps only remote postings -- set False to also
+    keep US onsite/hybrid postings."""
     url = f"https://apply.workable.com/api/v1/widget/accounts/{slug}?details=true"
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS) as client:
@@ -516,15 +531,16 @@ async def fetch_workable_jobs(slug: str) -> list[dict[str, Any]]:
             filter(None, [j.get("city"), j.get("state"), j.get("country")])
         )
         title = (j.get("title") or "").strip()
-        is_remote = (
-            bool(j.get("telecommuting"))
-            or "remote" in loc_str.lower()
-            or "remote" in title.lower()
-        )
-        if not is_remote:
-            continue
         if not _is_us_location(loc_str):
             continue
+        if remote_required:
+            is_remote = (
+                bool(j.get("telecommuting"))
+                or "remote" in loc_str.lower()
+                or "remote" in title.lower()
+            )
+            if not is_remote:
+                continue
 
         description = re.sub(r"<[^>]+>", " ", j.get("description", "") or "")
         description = html.unescape(re.sub(r"\s{2,}", " ", description).strip())
@@ -597,15 +613,16 @@ async def _rippling_job_description(client: httpx.AsyncClient, job_url: str) -> 
         return ""
 
 
-async def fetch_rippling_jobs(slug: str) -> list[dict[str, Any]]:
+async def fetch_rippling_jobs(slug: str, remote_required: bool = True) -> list[dict[str, Any]]:
     """Fetch jobs from a Rippling ATS board (ats.rippling.com/{slug}/jobs).
 
     The board page server-renders the job list (title, url, department, structured
-    locations) into __NEXT_DATA__. For each US-remote role we then fetch its detail
-    page and extract the real JD (also embedded in __NEXT_DATA__), so the scorer
-    gets full content; falls back to a synthesized description if extraction fails.
-    Only the SSR'd first page of the board is read (fine for the small boards we
-    track)."""
+    locations) into __NEXT_DATA__. For each qualifying US role we then fetch its
+    detail page and extract the real JD (also embedded in __NEXT_DATA__), so the
+    scorer gets full content; falls back to a synthesized description if extraction
+    fails. Only the SSR'd first page of the board is read (fine for the small boards
+    we track). remote_required=True (default) keeps only US-remote roles; set False
+    to also keep US onsite/hybrid postings."""
     board_url = f"https://ats.rippling.com/{slug}/jobs"
     try:
         async with httpx.AsyncClient(timeout=20.0, headers=HEADERS, follow_redirects=True) as client:
@@ -618,13 +635,16 @@ async def fetch_rippling_jobs(slug: str) -> list[dict[str, Any]]:
                 return []
             items = _rippling_find_items(json.loads(m.group(1)))
 
-            # First filter to US-remote (cheap), then fetch detail JDs only for those.
+            # First filter to US (and, if remote_required, remote) roles cheaply,
+            # then fetch detail JDs only for those.
             kept = []
             for it in items:
                 title = (it.get("name") or "").strip()
                 locs = it.get("locations") or []
                 us_remote_locs = []
+                us_onsite_locs = []
                 any_remote = "remote" in title.lower()
+                any_us_country = False
                 for L in locs:
                     cc = (L.get("countryCode") or "").upper()
                     country = (L.get("country") or "")
@@ -634,13 +654,17 @@ async def fetch_rippling_jobs(slug: str) -> list[dict[str, Any]]:
                     is_remote = wt in ("REMOTE", "HYBRID") or "remote" in nm.lower()
                     if is_remote:
                         any_remote = True
-                    if is_us and is_remote:
-                        us_remote_locs.append(nm or "United States")
-                if not us_remote_locs and not (any_remote and any(
-                    (L.get("countryCode") or "").upper() in ("US", "USA") for L in locs
-                )):
-                    continue
-                kept.append((it, title, us_remote_locs))
+                    if cc in ("US", "USA"):
+                        any_us_country = True
+                    if is_us:
+                        (us_remote_locs if is_remote else us_onsite_locs).append(nm or "United States")
+                if remote_required:
+                    if not us_remote_locs and not (any_remote and any_us_country):
+                        continue
+                else:
+                    if not us_remote_locs and not us_onsite_locs and not (any_remote and any_us_country):
+                        continue
+                kept.append((it, title, us_remote_locs, us_onsite_locs))
 
             # Fetch real JDs concurrently (small boards, so this is cheap).
             sem = asyncio.Semaphore(5)
@@ -648,19 +672,24 @@ async def fetch_rippling_jobs(slug: str) -> list[dict[str, Any]]:
                 async with sem:
                     return await _rippling_job_description(client, job_url)
             descriptions = await asyncio.gather(
-                *[_desc((it.get("url") or "").strip()) for it, _, _ in kept]
+                *[_desc((it.get("url") or "").strip()) for it, _, _, _ in kept]
             )
     except (httpx.RequestError, json.JSONDecodeError, ValueError) as exc:
         print(f"  [rippling/{slug}] {type(exc).__name__} – skipping")
         return []
 
     jobs = []
-    for (it, title, us_remote_locs), real_jd in zip(kept, descriptions, strict=True):
-        location = "Remote – " + (us_remote_locs[0] if us_remote_locs else "United States")
+    for (it, title, us_remote_locs, us_onsite_locs), real_jd in zip(kept, descriptions, strict=True):
+        if us_remote_locs:
+            location = "Remote – " + us_remote_locs[0]
+        elif us_onsite_locs:
+            location = us_onsite_locs[0]
+        else:
+            location = "United States"
         dept = ((it.get("department") or {}).get("name") or "").strip()
         description = real_jd or (
             f"{title}. {('Team: ' + dept + '. ') if dept else ''}"
-            f"Remote role based in the United States. See the full job description at {it.get('url','')}."
+            f"Role based in the United States ({location}). See the full job description at {it.get('url','')}."
         )
         sal_min, sal_max, sal_raw = _extract_salary(description)
         jobs.append(
@@ -680,11 +709,17 @@ async def fetch_rippling_jobs(slug: str) -> list[dict[str, Any]]:
 
 async def fetch_all_companies(
     companies_config: list[dict[str, str]],
+    remote_required: bool = True,
 ) -> list[dict[str, Any]]:
     """
     Fetch jobs from all companies in parallel.
     Returns deduplicated list of dicts with keys:
       company, title, url, platform, description
+
+    remote_required=True (default) keeps this app's original behavior: only
+    postings that read as remote are kept. Set False (per-user, from
+    config/title_filters.json's remote_required field) to also keep US
+    onsite/hybrid postings, for a candidate who isn't remote-only.
     """
 
     async def fetch_one(company: dict[str, str]) -> list[dict[str, Any]]:
@@ -693,19 +728,19 @@ async def fetch_all_companies(
         slug = company["slug"]
 
         if platform == "greenhouse":
-            raw_jobs = await fetch_greenhouse_jobs(slug)
+            raw_jobs = await fetch_greenhouse_jobs(slug, remote_required)
         elif platform == "lever":
-            raw_jobs = await fetch_lever_jobs(slug)
+            raw_jobs = await fetch_lever_jobs(slug, remote_required)
         elif platform == "ashby":
-            raw_jobs = await fetch_ashby_jobs(slug)
+            raw_jobs = await fetch_ashby_jobs(slug, remote_required)
         elif platform == "recruitee":
-            raw_jobs = await fetch_recruitee_jobs(slug)
+            raw_jobs = await fetch_recruitee_jobs(slug, remote_required)
         elif platform == "workable":
-            raw_jobs = await fetch_workable_jobs(slug)
+            raw_jobs = await fetch_workable_jobs(slug, remote_required)
         elif platform == "rippling":
-            raw_jobs = await fetch_rippling_jobs(slug)
+            raw_jobs = await fetch_rippling_jobs(slug, remote_required)
         elif platform == "breezy":
-            raw_jobs = await fetch_breezy_jobs(slug)
+            raw_jobs = await fetch_breezy_jobs(slug, remote_required)
         else:
             print(f"  Unknown platform '{platform}' for {name} – skipping")
             return []

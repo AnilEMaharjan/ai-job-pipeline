@@ -203,7 +203,8 @@ def fetch():
 
     console.print(f"Fetching from [cyan]{len(companies)}[/cyan] companies...")
 
-    jobs = asyncio.run(scraper.fetch_all_companies(companies))
+    remote_required = load_title_filters()["remote_required"]
+    jobs = asyncio.run(scraper.fetch_all_companies(companies, remote_required=remote_required))
 
     console.print(f"\nFound [green]{len(jobs)}[/green] total jobs. Saving new ones...")
 
