@@ -88,6 +88,7 @@ Apron
 Arc
 Arcade
 Arcadia
+Architect
 Arize AI
 Array
 Arta Finance
@@ -222,7 +223,9 @@ Circleback
 CircleCI
 Civitech
 Clari
+ClassDojo
 ClassPass
+Clay
 Clearbit
 Clearco
 Cleo
@@ -287,6 +290,7 @@ Cortex
 Count
 Counterpart
 Coupa
+Course Hero
 Coursera
 Cowbell
 Cradle
@@ -316,6 +320,7 @@ Dagger
 Dash0
 Dashlane
 Databricks
+DataCamp
 Datadog
 Datafold
 DataGrail
@@ -332,6 +337,7 @@ Deepgram
 Deepnote
 Default
 Definitive Healthcare
+Degreed
 Deloitte
 Delphi
 DemandBase
@@ -471,6 +477,7 @@ Freshworks
 Front
 FullStory
 Fundraise Up
+Fuse
 Future
 G2
 Gable
@@ -735,6 +742,7 @@ Maki
 ManyChat
 Mark43
 Marqeta
+MasterClass
 Mastra
 Materialize
 Matic
@@ -794,6 +802,7 @@ Moveworks
 Moxie
 mParticle
 MuleSoft
+Multiverse
 Mural
 Mutiny
 Mux
@@ -808,6 +817,7 @@ Nebius
 Neo4j
 Neon
 neptune.ai
+Nerdy
 Netflix
 Netflix Animation
 Netlify
@@ -864,6 +874,7 @@ Opendoor
 OpenEvidence
 Openly
 OpenPhone
+OpenRouter
 OpenSpace
 OpenTable
 OpsLevel
@@ -989,6 +1000,7 @@ Qualia
 Qualified
 Qualified Health
 Qualtrics
+Qualytics
 Quanata
 Quantifind
 Quince

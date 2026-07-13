@@ -7077,5 +7077,65 @@
     "name": "Coursera",
     "platform": "greenhouse",
     "slug": "sourcingcour"
+  },
+  {
+    "name": "Clay",
+    "platform": "ashby",
+    "slug": "claylabs"
+  },
+  {
+    "name": "Qualytics",
+    "platform": "ashby",
+    "slug": "qualytics"
+  },
+  {
+    "name": "OpenRouter",
+    "platform": "ashby",
+    "slug": "openrouter"
+  },
+  {
+    "name": "Architect",
+    "platform": "ashby",
+    "slug": "architect"
+  },
+  {
+    "name": "Fuse",
+    "platform": "ashby",
+    "slug": "fuse"
+  },
+  {
+    "name": "ClassDojo",
+    "platform": "ashby",
+    "slug": "classdojo"
+  },
+  {
+    "name": "DataCamp",
+    "platform": "greenhouse",
+    "slug": "datacamp"
+  },
+  {
+    "name": "Degreed",
+    "platform": "greenhouse",
+    "slug": "degreed"
+  },
+  {
+    "name": "Multiverse",
+    "platform": "ashby",
+    "slug": "multiverse"
+  },
+  {
+    "name": "MasterClass",
+    "platform": "greenhouse",
+    "slug": "masterclass"
+  },
+  {
+    "name": "Nerdy",
+    "platform": "greenhouse",
+    "slug": "nerdy"
+  },
+  {
+    "name": "Course Hero",
+    "platform": "greenhouse",
+    "slug": "learneo"
   }
 ]

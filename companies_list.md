@@ -1,4 +1,4 @@
-# Job Pipeline — Tracked Companies (1372)
+# Job Pipeline — Tracked Companies (1384)
 
 Careers-board URLs are approximate (built from platform + slug); most resolve, a few may 404 if a company uses a custom domain.
 
@@ -94,6 +94,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | Arc | https://ats.rippling.com/arc/jobs |
 | Arcade | https://jobs.ashbyhq.com/arcade |
 | Arcadia | https://jobs.lever.co/arcadia |
+| Architect | https://jobs.ashbyhq.com/architect |
 | Arize AI | https://job-boards.greenhouse.io/arizeai |
 | Array | https://job-boards.greenhouse.io/array |
 | Arta Finance | https://jobs.ashbyhq.com/artafinance |
@@ -229,7 +230,9 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | CircleCI | https://job-boards.greenhouse.io/circleci |
 | Civitech | https://jobs.lever.co/civitech |
 | Clari | https://jobs.lever.co/clari |
+| ClassDojo | https://jobs.ashbyhq.com/classdojo |
 | ClassPass | https://job-boards.greenhouse.io/classpass |
+| Clay | https://jobs.ashbyhq.com/claylabs |
 | Clearbit | https://jobs.ashbyhq.com/clearbit |
 | Clearco | https://jobs.ashbyhq.com/clearco |
 | Cleo | https://job-boards.greenhouse.io/cleo |
@@ -294,6 +297,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | Count | https://jobs.ashbyhq.com/count |
 | Counterpart | https://job-boards.greenhouse.io/counterpart |
 | Coupa | https://jobs.lever.co/coupa |
+| Course Hero | https://job-boards.greenhouse.io/learneo |
 | Coursera | https://job-boards.greenhouse.io/coursera |
 | Coursera | https://job-boards.greenhouse.io/sourcingcour |
 | Cowbell | https://job-boards.greenhouse.io/cowbellcyber |
@@ -326,6 +330,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | Dash0 | https://jobs.ashbyhq.com/dash0 |
 | Dashlane | https://job-boards.greenhouse.io/dashlane |
 | Databricks | https://job-boards.greenhouse.io/databricks |
+| DataCamp | https://job-boards.greenhouse.io/datacamp |
 | Datadog | https://job-boards.greenhouse.io/datadog |
 | Datafold | https://jobs.ashbyhq.com/datafold |
 | DataGrail | https://job-boards.greenhouse.io/datagrail |
@@ -342,6 +347,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | Deepnote | https://jobs.ashbyhq.com/deepnote |
 | Default | https://jobs.ashbyhq.com/withdefault |
 | Definitive Healthcare | https://job-boards.greenhouse.io/definitivehc |
+| Degreed | https://job-boards.greenhouse.io/degreed |
 | Deloitte | https://job-boards.greenhouse.io/deloitte |
 | Delphi | https://jobs.ashbyhq.com/delphi |
 | DemandBase | https://jobs.ashbyhq.com/demandbase |
@@ -481,6 +487,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | Front | https://job-boards.greenhouse.io/frontrunner |
 | FullStory | https://jobs.ashbyhq.com/fullstory |
 | Fundraise Up | https://job-boards.greenhouse.io/fundraiseup |
+| Fuse | https://jobs.ashbyhq.com/fuse |
 | Future | https://job-boards.greenhouse.io/future |
 | G2 | https://jobs.ashbyhq.com/g2 |
 | Gable | https://apply.workable.com/gable |
@@ -745,6 +752,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | ManyChat | https://job-boards.greenhouse.io/manychat |
 | Mark43 | https://job-boards.greenhouse.io/mark43 |
 | Marqeta | https://job-boards.greenhouse.io/marqeta |
+| MasterClass | https://job-boards.greenhouse.io/masterclass |
 | Mastra | https://jobs.ashbyhq.com/mastra |
 | Materialize | https://jobs.ashbyhq.com/materialize |
 | Matic | https://job-boards.greenhouse.io/matic |
@@ -804,6 +812,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | Moxie | https://jobs.ashbyhq.com/Moxie |
 | mParticle | https://jobs.ashbyhq.com/mparticle |
 | MuleSoft | https://job-boards.greenhouse.io/mulesoft |
+| Multiverse | https://jobs.ashbyhq.com/multiverse |
 | Mural | https://jobs.ashbyhq.com/mural |
 | Mutiny | https://jobs.ashbyhq.com/mutiny |
 | Mux | https://jobs.ashbyhq.com/mux |
@@ -818,6 +827,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | Neo4j | https://job-boards.greenhouse.io/neo4j |
 | Neon | https://jobs.lever.co/neon |
 | neptune.ai | https://job-boards.greenhouse.io/neptuneai |
+| Nerdy | https://job-boards.greenhouse.io/nerdy |
 | Netflix | https://jobs.lever.co/netflix |
 | Netflix Animation | https://job-boards.greenhouse.io/netflixanimation |
 | Netlify | https://job-boards.greenhouse.io/netlify |
@@ -874,6 +884,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | OpenEvidence | https://jobs.ashbyhq.com/openevidence |
 | Openly | https://job-boards.greenhouse.io/openly |
 | OpenPhone | https://job-boards.greenhouse.io/openphone |
+| OpenRouter | https://jobs.ashbyhq.com/openrouter |
 | OpenSpace | https://job-boards.greenhouse.io/openspace |
 | OpenTable | https://job-boards.greenhouse.io/opentable |
 | OpsLevel | https://jobs.ashbyhq.com/opslevel |
@@ -999,6 +1010,7 @@ Careers-board URLs are approximate (built from platform + slug); most resolve, a
 | Qualified | https://jobs.ashbyhq.com/qualified |
 | Qualified Health | https://jobs.ashbyhq.com/qualified-health-pbc |
 | Qualtrics | https://job-boards.greenhouse.io/qualtrics |
+| Qualytics | https://jobs.ashbyhq.com/qualytics |
 | Quanata | https://job-boards.greenhouse.io/quanata |
 | Quantifind | https://job-boards.greenhouse.io/quantifind |
 | Quince | https://job-boards.greenhouse.io/quince |
