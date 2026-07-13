@@ -8,35 +8,52 @@ import threading
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 
 DB_PATH = Path(__file__).parent.parent / "data" / "jobs.db"
 APPLICATIONS_DIR = Path(__file__).parent.parent / "applications"
 PIPELINE_DIR = Path(__file__).parent.parent
+CONFIG_DIR = PIPELINE_DIR / "config"
 INDEX_HTML = Path(__file__).parent / "templates" / "index.html"
 VENV_PYTHON = Path(__file__).parent.parent / ".venv" / "bin" / "python"
 REFERRAL_CSV = Path(__file__).parent.parent / "referral_map.csv"
+RESUME_JSON = CONFIG_DIR / "resume.json"
+PERSONAL_JSON = CONFIG_DIR / "personal.json"
+CANDIDATE_NOTES = CONFIG_DIR / "candidate_notes.md"
+RESUME_EXAMPLE = CONFIG_DIR / "resume.example.json"
 
 # PDF filenames are derived from the applicant's name in config/resume.json.
-try:
-    with open(PIPELINE_DIR / "config" / "resume.json") as _f:
-        _last = (json.load(_f).get("name") or "Applicant").strip().split()[-1]
-except Exception:
-    _last = "Applicant"
-RESUME_PDF = f"{_last}_Resume.pdf"
-COVER_PDF = f"{_last}_CoverLetter.pdf"
+# mtime-cached (like load_referrals below) so a Profile-page save is picked up
+# immediately without re-reading the file on every request.
+_pdf_names_cache: dict = {"mtime": None, "names": ("Applicant_Resume.pdf", "Applicant_CoverLetter.pdf")}
+
+
+def _pdf_names() -> tuple[str, str]:
+    try:
+        mtime = RESUME_JSON.stat().st_mtime
+    except FileNotFoundError:
+        return _pdf_names_cache["names"]
+    if _pdf_names_cache["mtime"] != mtime:
+        try:
+            with open(RESUME_JSON) as f:
+                last = (json.load(f).get("name") or "Applicant").strip().split()[-1]
+        except Exception:
+            last = "Applicant"
+        _pdf_names_cache.update(mtime=mtime, names=(f"{last}_Resume.pdf", f"{last}_CoverLetter.pdf"))
+    return _pdf_names_cache["names"]
 
 app = FastAPI(title="Job Pipeline Dashboard")
-
-_LOCAL_HOSTS = ("127.0.0.1", "localhost")
 
 
 @app.middleware("http")
 async def _csrf_guard(request: Request, call_next):
     """Block cross-site state-changing requests (CSRF). Safe methods pass. For
     mutating methods, require Sec-Fetch-Site to be same-origin/none (modern
-    browsers), falling back to an Origin/Referer localhost check for older ones."""
+    browsers), falling back to an Origin/Referer same-origin check (against the
+    request's own Host header, not a hardcoded localhost list — so this holds
+    whether the dashboard is bound to 127.0.0.1 or a Tailscale IP for a hosted
+    friend) for older browsers that omit Sec-Fetch-Site."""
     if request.method not in ("GET", "HEAD", "OPTIONS"):
         sfs = request.headers.get("sec-fetch-site")
         if sfs is not None:
@@ -44,7 +61,7 @@ async def _csrf_guard(request: Request, call_next):
         else:
             from urllib.parse import urlparse
             origin = request.headers.get("origin") or request.headers.get("referer") or ""
-            ok = (urlparse(origin).hostname in _LOCAL_HOSTS) if origin else True
+            ok = (urlparse(origin).netloc == request.headers.get("host", "")) if origin else True
         if not ok:
             return JSONResponse({"detail": "cross-site request blocked"}, status_code=403)
     response = await call_next(request)
@@ -389,6 +406,7 @@ def get_jobs(
         open_roles_by_company[orow["company"]] = orow["c"]
 
     jobs = []
+    resume_pdf_name, _ = _pdf_names()
     for r in rows:
         j = dict(r)
         j["strengths"] = json.loads(j.get("strengths") or "[]")[:3]
@@ -407,7 +425,7 @@ def get_jobs(
         def slugify(t):
             return re.sub(r"[\s_-]+", "-", re.sub(r"[^\w\s-]", "", t.lower().strip()))[:60]
         app_dir = APPLICATIONS_DIR / slugify(j["company"]) / slugify(j["title"])
-        j["has_materials"] = (app_dir / RESUME_PDF).exists()
+        j["has_materials"] = (app_dir / resume_pdf_name).exists()
         j["materials_path"] = str(app_dir) if j["has_materials"] else None
         j["connections"] = referrals.get(j["company"], [])
         jobs.append(j)
@@ -501,13 +519,100 @@ def open_materials(job_id: int):
     def slugify(t):
         return re.sub(r"[\s_-]+", "-", re.sub(r"[^\w\s-]", "", t.lower().strip()))[:60]
     app_dir = APPLICATIONS_DIR / slugify(row["company"]) / slugify(row["title"])
-    resume = app_dir / RESUME_PDF
-    cover = app_dir / COVER_PDF
+    resume_pdf_name, cover_pdf_name = _pdf_names()
+    resume = app_dir / resume_pdf_name
+    cover = app_dir / cover_pdf_name
     files = [str(f) for f in [resume, cover] if f.exists()]
     if files:
         subprocess.run(["open"] + files)
         return {"ok": True, "opened": len(files)}
     return JSONResponse({"ok": False, "error": "no materials found"}, status_code=404)
+
+
+# ── Profile (self-service onboarding: resume / personal / notes) ──────────────
+# Lets a friend on a hosted instance set up their own profile from the browser —
+# no host touching the filesystem. Writes the same three files a human would
+# hand-edit: config/resume.json, config/personal.json, config/candidate_notes.md.
+
+@app.get("/api/profile")
+def get_profile():
+    def read_or(path: Path, default: str) -> str:
+        try:
+            return path.read_text()
+        except FileNotFoundError:
+            return default
+
+    return {
+        "resume": read_or(RESUME_JSON, ""),
+        "personal": read_or(PERSONAL_JSON, "{}\n"),
+        "notes": read_or(CANDIDATE_NOTES, ""),
+        "has_resume": RESUME_JSON.exists(),
+    }
+
+
+@app.post("/api/profile/parse-resume")
+def parse_resume_upload(file: UploadFile | None = None, text: str = ""):
+    """Convert an uploaded resume (PDF) or pasted text into the resume.json schema
+    via Claude. Returns the parsed JSON for review — does NOT save it; the user
+    reviews/edits in the Profile editor and saves explicitly via /api/profile/save."""
+    from src.resume_import import ResumeParseError, parse_resume
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return JSONResponse({"ok": False, "error": "No ANTHROPIC_API_KEY configured on this instance."}, status_code=400)
+
+    pdf_bytes = None
+    if file is not None and file.filename:
+        raw = file.file.read()
+        if file.filename.lower().endswith(".pdf"):
+            pdf_bytes = raw
+        else:
+            text = raw.decode("utf-8", errors="ignore")
+    if not pdf_bytes and not text.strip():
+        return JSONResponse({"ok": False, "error": "Upload a PDF or paste resume text."}, status_code=400)
+
+    try:
+        example = RESUME_EXAMPLE.read_text()
+        data, missing = parse_resume(example, pdf_bytes=pdf_bytes, text=text or None, api_key=api_key)
+    except ResumeParseError as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=502)
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": f"Unexpected error: {e}"}, status_code=500)
+
+    return {"ok": True, "resume": json.dumps(data, indent=2), "missing_keys": missing}
+
+
+@app.post("/api/profile/save")
+async def save_profile(request: Request):
+    """Save the profile editor's three fields. Each is optional — only provided
+    (non-null) fields are written. resume/personal must be valid JSON text;
+    notes is saved as-is (markdown)."""
+    body = await request.json()
+    errors = {}
+    parsed_resume = parsed_personal = None
+
+    if body.get("resume") is not None:
+        try:
+            parsed_resume = json.loads(body["resume"])
+        except json.JSONDecodeError as e:
+            errors["resume"] = f"Invalid JSON: {e}"
+    if body.get("personal") is not None:
+        try:
+            parsed_personal = json.loads(body["personal"])
+        except json.JSONDecodeError as e:
+            errors["personal"] = f"Invalid JSON: {e}"
+    if errors:
+        return JSONResponse({"ok": False, "errors": errors}, status_code=400)
+
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    if parsed_resume is not None:
+        RESUME_JSON.write_text(json.dumps(parsed_resume, indent=2) + "\n")
+    if parsed_personal is not None:
+        PERSONAL_JSON.write_text(json.dumps(parsed_personal, indent=2) + "\n")
+    if body.get("notes") is not None:
+        CANDIDATE_NOTES.write_text(body["notes"])
+
+    return {"ok": True}
 
 
 # ── Main UI ───────────────────────────────────────────────────────────────────

@@ -8,40 +8,22 @@ Usage:
   ./.venv/bin/python scripts/import_resume.py ~/Downloads/alice_resume.pdf
   # or specify output explicitly:
   ./.venv/bin/python scripts/import_resume.py resume.txt --out config/resume.json
+
+(The dashboard's Profile page offers the same conversion through the browser —
+this script is for host-side / scripted setup.)
 """
-import base64
 import json
 import os
 import sys
 from pathlib import Path
 
-import anthropic
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 load_dotenv(ROOT / ".env", override=False)  # optional; Infisical/env may already provide the key
 
-REQUIRED_KEYS = {"name", "email", "location", "summary", "skills", "experience", "education"}
-
-
-def build_message(resume_path: Path, example: str):
-    """Return the content blocks: the example schema + the resume (PDF or text)."""
-    instructions = (
-        "Convert the attached resume into JSON that matches EXACTLY the structure, "
-        "keys, and types of this example (same schema, same field names):\n\n"
-        f"{example}\n\n"
-        "Rules: use ONLY information present in the resume; never invent employers, "
-        "titles, dates, or metrics. Keep the same top-level keys as the example even "
-        "if some arrays end up shorter. Respond with ONLY the JSON, no prose, no code fences."
-    )
-    if resume_path.suffix.lower() == ".pdf":
-        data = base64.standard_b64encode(resume_path.read_bytes()).decode()
-        return [
-            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": data}},
-            {"type": "text", "text": instructions},
-        ]
-    text = resume_path.read_text(encoding="utf-8", errors="ignore")
-    return [{"type": "text", "text": instructions + "\n\nRESUME:\n" + text}]
+from src.resume_import import ResumeParseError, parse_resume  # noqa: E402
 
 
 def main() -> int:
@@ -61,26 +43,26 @@ def main() -> int:
     out = out or (ROOT / "config" / "resume.json")
     example = (ROOT / "config" / "resume.example.json").read_text()
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
         print("No ANTHROPIC_API_KEY (checked .env and environment).")
         return 1
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
     print(f"Parsing {resume_path.name} with Claude...")
-    msg = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=4000,
-        messages=[{"role": "user", "content": build_message(resume_path, example)}],
-    )
-    raw = msg.content[0].text.strip()
-    raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    is_pdf = resume_path.suffix.lower() == ".pdf"
     try:
-        data = json.loads(raw)
-    except json.JSONDecodeError as e:
-        print(f"Claude did not return valid JSON ({e}). Raw start:\n{raw[:300]}")
+        data, missing = parse_resume(
+            example,
+            pdf_bytes=resume_path.read_bytes() if is_pdf else None,
+            text=None if is_pdf else resume_path.read_text(encoding="utf-8", errors="ignore"),
+            api_key=api_key,
+        )
+    except ResumeParseError as e:
+        print(str(e))
         return 1
-    missing = REQUIRED_KEYS - set(data)
+
     if missing:
-        print(f"WARNING: parsed JSON is missing expected keys: {sorted(missing)} — review before using.")
+        print(f"WARNING: parsed JSON is missing expected keys: {missing} — review before using.")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(data, indent=2) + "\n")
     print(f"✅ Wrote {out}. REVIEW IT — verify titles/dates/metrics match the real resume before scoring.")

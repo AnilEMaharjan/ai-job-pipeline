@@ -18,6 +18,8 @@
   .run-btn { height: 32px; padding: 0 14px; border-radius: 6px; border: none; background: #2563eb; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
   .run-btn:hover { background: #1d4ed8; }
   .run-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+  .run-btn.profile-btn { background: #fff; color: #1a1a1a; border: 1px solid #ddd; }
+  .run-btn.profile-btn:hover { background: #f5f5f5; }
   .run-status { font-size: 12px; color: #888; min-width: 160px; text-align: right; }
   .run-status.running { color: #2563eb; }
   .run-status.done { color: #22c55e; }
@@ -95,6 +97,21 @@
   .modal-list a { color: #2563eb; text-decoration: none; }
   .modal-list a:hover { text-decoration: underline; }
   .modal-hint { font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 10px; margin-top: 12px; }
+  .modal-box.profile-box { max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; }
+  .profile-tabs { display: flex; gap: 4px; border-bottom: 1px solid #e5e5e5; margin-bottom: 14px; }
+  .profile-tab { padding: 8px 14px; font-size: 13px; font-weight: 600; color: #888; cursor: pointer; border-bottom: 2px solid transparent; }
+  .profile-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .profile-pane { display: none; flex: 1; min-height: 0; flex-direction: column; overflow-y: auto; }
+  .profile-pane.active { display: flex; }
+  .profile-upload-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .profile-upload-row input[type=file] { font-size: 12px; }
+  .profile-btn-small { height: 30px; padding: 0 12px; border-radius: 6px; border: none; background: #2563eb; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .profile-btn-small:disabled { background: #93c5fd; cursor: not-allowed; }
+  .profile-textarea { width: 100%; flex: 1; min-height: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical; color: #1a1a1a; background: #fafafa; }
+  .profile-status { font-size: 12px; margin: 8px 0; min-height: 16px; }
+  .profile-status.ok { color: #22c55e; }
+  .profile-status.err { color: #ef4444; }
+  .profile-footer { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #eee; padding-top: 12px; margin-top: 12px; }
   .cmp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .cmp-table th { text-align: left; color: #888; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; padding: 4px 8px; border-bottom: 1px solid #e5e5e5; }
   .cmp-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
@@ -162,6 +179,7 @@
   <span class="subtitle" id="last-updated"></span>
   <div class="spacer"></div>
   <span class="run-status" id="run-status"></span>
+  <button class="run-btn profile-btn" onclick="openProfileModal()" title="Set up or edit your resume, personal info, and candidate notes">⚙ Profile</button>
   <button class="run-btn" id="run-btn" onclick="runPipeline()">⟳ Fetch &amp; Score</button>
 </div>
 
@@ -483,6 +501,110 @@ function showAppliedModal(company, appliedJson, curTitle, curScore, curMin, curM
   document.addEventListener('keydown', function esc2(e){ if(e.key==='Escape'){ overlay.remove(); document.removeEventListener('keydown', esc2);} });
   document.body.appendChild(overlay);
 }
+
+// Self-service profile editor: resume (upload -> Claude parse -> review/edit as
+// JSON), personal.json, and candidate_notes.md. Lets a hosted friend set up their
+// own profile from the browser with no one touching the instance's filesystem.
+function openProfileModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box profile-box" onclick="event.stopPropagation()">
+      <div class="modal-title">⚙ Profile setup</div>
+      <div class="profile-tabs">
+        <div class="profile-tab active" data-tab="resume" onclick="profileTab('resume')">Resume</div>
+        <div class="profile-tab" data-tab="personal" onclick="profileTab('personal')">Personal</div>
+        <div class="profile-tab" data-tab="notes" onclick="profileTab('notes')">Notes</div>
+      </div>
+      <div class="profile-pane active" data-pane="resume">
+        <div class="profile-upload-row">
+          <input type="file" id="profile-resume-file" accept=".pdf,.txt">
+          <button class="profile-btn-small" id="profile-parse-btn" onclick="parseResumeUpload()">✨ Parse with AI</button>
+        </div>
+        <div class="profile-status" id="profile-parse-status"></div>
+        <textarea class="profile-textarea" id="profile-resume-text" spellcheck="false" placeholder="Upload a resume above, or paste/edit the resume.json here directly."></textarea>
+      </div>
+      <div class="profile-pane" data-pane="personal">
+        <textarea class="profile-textarea" id="profile-personal-text" spellcheck="false" placeholder='{"former_employers": ["acme", "beta inc"]}'></textarea>
+      </div>
+      <div class="profile-pane" data-pane="notes">
+        <textarea class="profile-textarea" id="profile-notes-text" spellcheck="false" placeholder="Living memory the generator reads every run — tools you've used, stories, personal angles, preferences..."></textarea>
+      </div>
+      <div class="profile-status" id="profile-save-status"></div>
+      <div class="profile-footer">
+        <div class="modal-hint" style="border:none;padding:6px 0;margin:0;flex:1;">Esc or click outside to close.</div>
+        <button class="profile-btn-small" id="profile-save-btn" onclick="saveProfile()">💾 Save Profile</button>
+      </div>
+    </div>`;
+  overlay.onclick = () => overlay.remove();
+  document.addEventListener('keydown', function escP(e){ if(e.key==='Escape'){ overlay.remove(); document.removeEventListener('keydown', escP);} });
+  document.body.appendChild(overlay);
+
+  fetch('/api/profile').then(r => r.json()).then(p => {
+    document.getElementById('profile-resume-text').value = p.resume || '';
+    document.getElementById('profile-personal-text').value = p.personal || '{}\n';
+    document.getElementById('profile-notes-text').value = p.notes || '';
+  }).catch(() => {});
+}
+function profileTab(name) {
+  document.querySelectorAll('.profile-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.profile-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+}
+async function parseResumeUpload() {
+  const fileInput = document.getElementById('profile-resume-file');
+  const status = document.getElementById('profile-parse-status');
+  const btn = document.getElementById('profile-parse-btn');
+  if (!fileInput.files.length) { status.textContent = 'Choose a PDF or .txt resume file first.'; status.className = 'profile-status err'; return; }
+  const form = new FormData();
+  form.append('file', fileInput.files[0]);
+  btn.disabled = true;
+  status.textContent = 'Parsing with Claude...'; status.className = 'profile-status';
+  try {
+    const res = await fetch('/api/profile/parse-resume', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!data.ok) { status.textContent = '❌ ' + (data.error || 'Parse failed.'); status.className = 'profile-status err'; return; }
+    document.getElementById('profile-resume-text').value = data.resume;
+    const warn = (data.missing_keys && data.missing_keys.length) ? ` (missing: ${data.missing_keys.join(', ')} — check below)` : '';
+    status.textContent = `✅ Parsed. Review the JSON below before saving${warn}.`;
+    status.className = 'profile-status ok';
+  } catch (e) {
+    status.textContent = '❌ ' + e; status.className = 'profile-status err';
+  } finally {
+    btn.disabled = false;
+  }
+}
+async function saveProfile() {
+  const status = document.getElementById('profile-save-status');
+  const btn = document.getElementById('profile-save-btn');
+  const resumeText = document.getElementById('profile-resume-text').value.trim();
+  const personalText = document.getElementById('profile-personal-text').value.trim();
+  const notesText = document.getElementById('profile-notes-text').value;
+  btn.disabled = true;
+  status.textContent = 'Saving...'; status.className = 'profile-status';
+  try {
+    const res = await fetch('/api/profile/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        resume: resumeText || null,
+        personal: personalText || null,
+        notes: notesText,
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      const msgs = data.errors ? Object.entries(data.errors).map(([k, v]) => `${k}: ${v}`).join(' | ') : (data.error || 'Save failed.');
+      status.textContent = '❌ ' + msgs; status.className = 'profile-status err';
+      return;
+    }
+    status.textContent = '✅ Saved.'; status.className = 'profile-status ok';
+  } catch (e) {
+    status.textContent = '❌ ' + e; status.className = 'profile-status err';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 document.addEventListener('click', (e) => {
   const menu = document.getElementById('filter-status');
   if (menu && !menu.parentElement.contains(e.target)) menu.classList.remove('open');

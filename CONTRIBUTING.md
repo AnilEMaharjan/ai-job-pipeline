@@ -28,6 +28,13 @@ cp config/candidate_notes.example.md config/candidate_notes.md
 - `config/resume.json` — drives scoring, tailoring, and PDF output. The most important file.
 - `config/personal.json` — name/contact/links.
 - `config/candidate_notes.md` — living memory the generator reads each run.
+
+Easiest path: run the dashboard (`infisical run --path=/job-pipeline -- python pipeline.py dashboard`),
+click **⚙ Profile**, and upload your resume (PDF or .txt) — **✨ Parse with AI** converts
+it to `resume.json` for you (review before saving). Fill in `personal.json`/notes on
+the other two tabs, same page. Or hand-edit the files directly / use
+`scripts/import_resume.py <file>` from the CLI — same conversion, no browser needed.
+
 > The repo ships code only. `config/*.json`, `config/candidate_notes.md`, `data/`,
 > `applications/`, and `referral_map.csv` are gitignored, so you start with your own.
 

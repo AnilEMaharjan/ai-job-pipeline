@@ -32,24 +32,29 @@ person gets an independent instance; you (the host) cover the Anthropic API cost
    chmod 600 ~/jobpipe/shared.env
    ```
 
-## Add a friend (one command)
+## Add a friend (one command, then it's self-service)
 From a checkout of this repo:
 ```bash
 scripts/new-user.sh alice 8767 100.x.y.z     # <name> <port> <mac-tailscale-ip>
 ```
 That clones, builds the venv, seeds config templates, wires your key, and installs
 two launchd services (dashboard + daily fetch/score). Then:
-1. Set up their profile. The easy way — auto-convert their resume with Claude:
-   ```bash
-   cd ~/jobpipe/users/alice
-   ./.venv/bin/python scripts/import_resume.py ~/Downloads/alice_resume.pdf   # PDF or .txt
-   ```
-   That writes `config/resume.json` for you — **review it** (verify titles/dates), then
-   lightly fill `config/personal.json` and `config/candidate_notes.md`.
-2. Seed data once: `cd ~/jobpipe/users/alice && ./.venv/bin/python pipeline.py fetch && ./.venv/bin/python pipeline.py score`
-3. **Invite the friend to your Tailscale network** (Tailscale admin console → invite by email), then send them `http://100.x.y.z:8767`.
+1. **Invite the friend to your Tailscale network** (Tailscale admin console → invite
+   by email), then send them `http://100.x.y.z:8767`.
+2. That's it on your end. **They do the rest themselves in the browser** — no one
+   touches the Mac's filesystem for them:
+   - Open the URL → click **⚙ Profile** → **Resume** tab → upload their resume
+     (PDF or .txt) → **✨ Parse with AI** converts it to the app's schema →
+     they review/edit the JSON → **💾 Save Profile**.
+   - They also fill in the **Personal** and **Notes** tabs (same page).
+   - Click **⟳ Fetch & Score** in the header to run their first fetch + scoring pass.
 
 Give each friend a **different port** (8767, 8768, 8769, …).
+
+(If you'd rather do a friend's profile setup yourself from the host side instead —
+e.g. they're not comfortable poking at JSON — `scripts/import_resume.py` does the
+same PDF/text → resume.json conversion as the Profile page's upload button, just
+from the command line: `cd ~/jobpipe/users/alice && ./.venv/bin/python scripts/import_resume.py ~/Downloads/alice_resume.pdf`.)
 
 ## Updating everyone after a code change
 ```bash
@@ -81,7 +86,8 @@ while making heavy users cover their own API cost.
 - Dashboards bind to the **Tailscale IP only** — never `0.0.0.0` on an untrusted
   network. Access requires being on your tailnet.
 - The app itself has **no login**; Tailscale *is* the access control. Only invite
-  people you trust — anyone on the tailnet who knows the port can view that instance.
+  people you trust — anyone on the tailnet who knows the port can view **and edit**
+  that instance, including its Profile page (resume/personal/notes).
 - `shared.env` and each `.env` hold your API key: keep them `chmod 600`, never commit
   (they're gitignored).
 
