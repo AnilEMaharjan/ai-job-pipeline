@@ -75,6 +75,14 @@ def load_title_filters() -> dict:
             "include_keywords": set(data.get("include_keywords", [])),
             "exclude_keywords": set(data.get("exclude_keywords", [])),
             "whole_word_keywords": set(data.get("whole_word_keywords", [])),
+            # Hard pre-filter gate: reject hybrid/onsite postings before they
+            # reach (paid) scoring. Defaults True (strict remote-only) since
+            # that was this app's original hardcoded behavior; a candidate
+            # who's open to hybrid/onsite (e.g. NYC-area) should set this
+            # False in their own title_filters.json so those roles at least
+            # reach scoring, where scoring_rules.md can express the nuance
+            # ("prefer remote, don't reject hybrid") instead of a hard cut.
+            "remote_required": data.get("remote_required", True),
         }
     return _title_filters_cache
 
@@ -256,12 +264,13 @@ def score(limit):
         return
 
     # Pre-filter: skip irrelevant titles and international jobs without calling Claude
+    remote_required = load_title_filters()["remote_required"]
     to_score = []
     pre_rejected = 0
     for job in unscored:
         if (not is_relevant_title(job["title"])
                 or not is_us_location(job.get("location", ""))
-                or not is_remote_description(job.get("description", ""))):
+                or (remote_required and not is_remote_description(job.get("description", "")))):
             database.mark_job_status(job["id"], "filtered")
             pre_rejected += 1
         else:

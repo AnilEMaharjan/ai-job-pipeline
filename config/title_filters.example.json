@@ -1,5 +1,5 @@
 {
-  "_comment": "Pre-filters which job postings even reach (paid) AI scoring. include_keywords: a title needs ONE of these substrings (lowercased) to pass. exclude_keywords: any match here rejects the title outright, checked BEFORE include_keywords. whole_word_keywords: like include_keywords but matched as a whole word (regex \\b), for short words that would false-positive as a substring (e.g. 'data' inside 'database'). Copy this file to config/title_filters.json and edit for YOUR target titles.",
+  "_comment": "Pre-filters which job postings even reach (paid) AI scoring. include_keywords: a title needs ONE of these substrings (lowercased) to pass. exclude_keywords: any match here rejects the title outright, checked BEFORE include_keywords. whole_word_keywords: like include_keywords but matched as a whole word (regex \\b), for short words that would false-positive as a substring (e.g. 'data' inside 'database'). remote_required: true rejects any posting with hybrid/onsite language before it reaches scoring (the hard-cut default); set false if you're open to hybrid/onsite -- those roles will still reach scoring, where scoring_rules.md can express a softer preference instead of a hard rejection. Copy this file to config/title_filters.json and edit for YOUR target titles.",
 
   "include_keywords": [
     "marketing", "brand", "growth", "strategy",
@@ -11,5 +11,7 @@
     "temporary", "contractor", "freelance"
   ],
 
-  "whole_word_keywords": []
+  "whole_word_keywords": [],
+
+  "remote_required": true
 }

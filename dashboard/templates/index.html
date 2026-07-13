@@ -534,8 +534,8 @@ function openProfileModal() {
       </div>
       <div class="profile-pane" data-pane="titles">
         <div class="profile-status" id="profile-titles-hint"></div>
-        <div class="modal-hint" style="border:none;padding:0 0 8px;margin:0;">Which job titles reach (paid) AI scoring. <code>include_keywords</code>: title needs one match. <code>exclude_keywords</code>: any match rejects it first. <code>whole_word_keywords</code>: like include, but matched as a whole word (for short words like "data").</div>
-        <textarea class="profile-textarea" id="profile-titles-text" spellcheck="false" placeholder='{"include_keywords": ["marketing", "brand"], "exclude_keywords": ["intern"], "whole_word_keywords": []}'></textarea>
+        <div class="modal-hint" style="border:none;padding:0 0 8px;margin:0;">Which job titles reach (paid) AI scoring. <code>include_keywords</code>: title needs one match. <code>exclude_keywords</code>: any match rejects it first. <code>whole_word_keywords</code>: like include, but matched as a whole word (for short words like "data"). <code>remote_required</code>: <strong>true</strong> hard-rejects hybrid/onsite postings before scoring; set <strong>false</strong> if you're open to hybrid/onsite — those roles will still reach scoring, where Scoring Rules can express a softer preference instead.</div>
+        <textarea class="profile-textarea" id="profile-titles-text" spellcheck="false" placeholder='{"include_keywords": ["marketing", "brand"], "exclude_keywords": ["intern"], "whole_word_keywords": [], "remote_required": true}'></textarea>
       </div>
       <div class="profile-pane" data-pane="rules">
         <div class="profile-status" id="profile-rules-hint"></div>
