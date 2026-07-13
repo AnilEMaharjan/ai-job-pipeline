@@ -575,18 +575,24 @@ def run(ctx):
 
 @cli.command()
 @click.option("--port", default=8766, help="Port to run on (8765 is the daily-briefing assistant).")
-def dashboard(port):
+@click.option("--host", default="127.0.0.1",
+              help="Bind address. Default 127.0.0.1 (localhost only). For a Tailscale-hosted "
+                   "multi-user instance, set this to the machine's Tailscale IP (100.x.y.z) so "
+                   "only your tailnet can reach it — never 0.0.0.0 on an untrusted network.")
+def dashboard(port, host):
     """Launch the web dashboard."""
     import webbrowser
 
     import uvicorn
-    console.print(Panel(f"[bold blue]Opening dashboard at http://localhost:{port}[/bold blue]", expand=False))
-    try:
-        webbrowser.open(f"http://localhost:{port}")
-    except Exception:
-        pass  # headless / no browser — the printed URL is enough
-    # localhost only: keeps resumes / cover letters / salary data off the LAN
-    uvicorn.run("dashboard.app:app", host="127.0.0.1", port=port, reload=False)
+    console.print(Panel(f"[bold blue]Opening dashboard at http://{host}:{port}[/bold blue]", expand=False))
+    if host in ("127.0.0.1", "localhost"):
+        try:
+            webbrowser.open(f"http://localhost:{port}")
+        except Exception:
+            pass  # headless / no browser — the printed URL is enough
+    # Default 127.0.0.1 keeps resumes / cover letters / salary data off the LAN.
+    # Binding to a Tailscale IP scopes access to your private tailnet only.
+    uvicorn.run("dashboard.app:app", host=host, port=port, reload=False)
 
 
 if __name__ == "__main__":
