@@ -56,8 +56,20 @@ data and config are gitignored, so nothing personal is touched.
 Hosting is free, but **scoring/generation call the Anthropic API per user**. Cost
 scales ~linearly with friends (each scores against their own resume, so it can't be
 shared). Prompt caching + in-lane-only scoring keep it modest, but watch the first
-week's spend and cap the number of friends if it stings. Switching to
-bring-your-own-key later is a small change (give each their own `.env`).
+week's spend and cap the number of friends if it stings. If one friend gets
+expensive, move just them to their own key (next section) — no reprovisioning.
+
+## Switching a friend to their own key (BYO-key, any time)
+Each instance reads its key from its own `.env`, so you can flip a single user
+between the shared host key and their own key whenever you want:
+```bash
+scripts/set-user-key.sh alice sk-ant-...   # Alice pays for her own scoring
+scripts/set-user-key.sh alice --shared      # revert Alice to the shared host key
+```
+It rewrites only that user's `.env` (chmod 600) and restarts their dashboard. The
+daily fetch/score is a fresh process, so it picks up the new key on its next run.
+Nobody else is affected — the cheap way to keep hosting free for casual friends
+while making heavy users cover their own API cost.
 
 ## Security notes
 - Dashboards bind to the **Tailscale IP only** — never `0.0.0.0` on an untrusted
