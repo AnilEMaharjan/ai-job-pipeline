@@ -727,7 +727,24 @@ async function action(id, type) {
 }
 
 async function openMaterials(id) {
-  await fetch(`/api/jobs/${id}/open-materials`);
+  // Served over HTTP (not opened locally via macOS `open`), so this works the
+  // same whether you're local or a hosted friend viewing over Tailscale.
+  const data = await (await fetch(`/api/jobs/${id}/materials`)).json();
+  if (!data.ok) return;
+  const link = (kind, label) => data[kind] && data[kind].available
+    ? `<li><a href="${esc(data[kind].url)}" target="_blank" rel="noopener">${label}</a></li>` : '';
+  const rows = link('resume', '📄 Resume (PDF)') + link('cover', '✉️ Cover Letter (PDF)');
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-title">Generated materials</div>
+      <ul class="modal-list">${rows || '<li>No materials found.</li>'}</ul>
+      <div class="modal-hint">Opens in a new tab. Esc or click outside to close.</div>
+    </div>`;
+  overlay.onclick = () => overlay.remove();
+  document.addEventListener('keydown', function escM(e){ if(e.key==='Escape'){ overlay.remove(); document.removeEventListener('keydown', escM);} });
+  document.body.appendChild(overlay);
 }
 
 async function generateMaterials(id) {

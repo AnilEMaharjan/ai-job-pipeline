@@ -509,24 +509,57 @@ def reject_job(job_id: int):
     return {"ok": True}
 
 
-@app.get("/api/jobs/{job_id}/open-materials")
-def open_materials(job_id: int):
+def _slugify(t: str) -> str:
+    import re
+    return re.sub(r"[\s_-]+", "-", re.sub(r"[^\w\s-]", "", t.lower().strip()))[:60]
+
+
+def _materials_dir(job_id: int) -> Path | None:
     conn = get_db()
     row = conn.execute("SELECT company, title FROM jobs WHERE id=?", (job_id,)).fetchone()
     if not row:
+        return None
+    return APPLICATIONS_DIR / _slugify(row["company"]) / _slugify(row["title"])
+
+
+@app.get("/api/jobs/{job_id}/materials")
+def list_materials(job_id: int):
+    """Which generated materials exist for this job, and the URL to view each.
+    Served over HTTP (not opened locally with macOS `open`) so this works
+    identically whether the dashboard is local or a hosted friend's instance."""
+    app_dir = _materials_dir(job_id)
+    if app_dir is None:
         return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
-    import re
-    def slugify(t):
-        return re.sub(r"[\s_-]+", "-", re.sub(r"[^\w\s-]", "", t.lower().strip()))[:60]
-    app_dir = APPLICATIONS_DIR / slugify(row["company"]) / slugify(row["title"])
     resume_pdf_name, cover_pdf_name = _pdf_names()
-    resume = app_dir / resume_pdf_name
-    cover = app_dir / cover_pdf_name
-    files = [str(f) for f in [resume, cover] if f.exists()]
-    if files:
-        subprocess.run(["open"] + files)
-        return {"ok": True, "opened": len(files)}
-    return JSONResponse({"ok": False, "error": "no materials found"}, status_code=404)
+    out = {}
+    for kind, name in (("resume", resume_pdf_name), ("cover", cover_pdf_name)):
+        exists = (app_dir / name).exists()
+        out[kind] = {
+            "available": exists,
+            "filename": name,
+            "url": f"/api/jobs/{job_id}/materials/{kind}" if exists else None,
+        }
+    return {"ok": True, **out}
+
+
+@app.get("/api/jobs/{job_id}/materials/{kind}")
+def get_material(job_id: int, kind: str):
+    if kind not in ("resume", "cover"):
+        return JSONResponse({"ok": False, "error": "invalid material kind"}, status_code=400)
+    app_dir = _materials_dir(job_id)
+    if app_dir is None:
+        return JSONResponse({"ok": False, "error": "not found"}, status_code=404)
+    resume_pdf_name, cover_pdf_name = _pdf_names()
+    name = resume_pdf_name if kind == "resume" else cover_pdf_name
+    path = app_dir / name
+    if not path.exists():
+        return JSONResponse({"ok": False, "error": "material not generated yet"}, status_code=404)
+    from fastapi.responses import Response
+    return Response(
+        content=path.read_bytes(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="{name}"'},
+    )
 
 
 # ── Profile (self-service onboarding: resume / personal / notes) ──────────────
