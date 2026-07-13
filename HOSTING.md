@@ -39,7 +39,13 @@ scripts/new-user.sh alice 8767 100.x.y.z     # <name> <port> <mac-tailscale-ip>
 ```
 That clones, builds the venv, seeds config templates, wires your key, and installs
 two launchd services (dashboard + daily fetch/score). Then:
-1. Fill in `~/jobpipe/users/alice/config/{resume.json,personal.json,candidate_notes.md}`.
+1. Set up their profile. The easy way — auto-convert their resume with Claude:
+   ```bash
+   cd ~/jobpipe/users/alice
+   ./.venv/bin/python scripts/import_resume.py ~/Downloads/alice_resume.pdf   # PDF or .txt
+   ```
+   That writes `config/resume.json` for you — **review it** (verify titles/dates), then
+   lightly fill `config/personal.json` and `config/candidate_notes.md`.
 2. Seed data once: `cd ~/jobpipe/users/alice && ./.venv/bin/python pipeline.py fetch && ./.venv/bin/python pipeline.py score`
 3. **Invite the friend to your Tailscale network** (Tailscale admin console → invite by email), then send them `http://100.x.y.z:8767`.
 
