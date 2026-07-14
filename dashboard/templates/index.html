@@ -155,6 +155,7 @@
   .detail-col li::before { content: "+"; position: absolute; left: 0; color: #22c55e; font-weight: 700; }
   .detail-col.missing li::before { content: "–"; color: #f59e0b; }
   .summary-text { font-size: 12px; color: #555; line-height: 1.5; margin-top: 6px; }
+  .reject-reason-text { font-size: 12px; color: #92400e; line-height: 1.5; margin-top: 8px; background: #fef3c7; border-radius: 6px; padding: 6px 10px; }
 
   .status-pill { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
   .status-pill.applied { background: #dcfce7; color: #15803d; }
@@ -667,7 +668,10 @@ async function loadJobs() {
     const closedPill = j.posting_closed
       ? `<span class="status-pill posting-closed" title="This posting dropped out of the company's live feed, so it looks closed.${j.company_open_roles ? ' ' + j.company_open_roles + ' other role(s) still open here.' : ''}">🔴 posting closed${j.company_open_roles ? ' · ' + j.company_open_roles + ' open here' : ''}</span>`
       : '';
-    const statusPill = `<span class="status-pill ${j.status}">${STATUS_PILL[j.status] || j.status}</span>${j.rejected ? '<span class="status-pill rejected-me">rejected by me</span>' : ''}${closedPill}`;
+    const rejectedPill = j.rejected
+      ? `<span class="status-pill rejected-me"${j.reject_reason ? ` title="${esc(j.reject_reason)}"` : ''}>rejected by me${j.reject_reason ? ' 💬' : ''}</span>`
+      : '';
+    const statusPill = `<span class="status-pill ${j.status}">${STATUS_PILL[j.status] || j.status}</span>${rejectedPill}${closedPill}`;
     const strengthsHtml = j.strengths.length
       ? `<div class="detail-col"><h4>Strengths</h4><ul>${j.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul></div>`
       : '';
@@ -675,6 +679,7 @@ async function loadJobs() {
       ? `<div class="detail-col missing"><h4>Gaps</h4><ul>${j.missing_skills.map(m => `<li>${esc(m)}</li>`).join('')}</ul></div>`
       : '';
     const summaryHtml = j.summary ? `<p class="summary-text">${esc(j.summary.substring(0, 300))}${j.summary.length > 300 ? '…' : ''}</p>` : '';
+    const reasonHtml = j.reject_reason ? `<p class="reject-reason-text">💬 <strong>Why I passed:</strong> ${esc(j.reject_reason)}</p>` : '';
     const conns = j.connections || [];
     const connsHtml = conns.length
       ? `<div class="detail-col conns"><h4>🤝 Your connections here (${conns.length})</h4><ul>${conns.map(c => {
@@ -717,13 +722,14 @@ async function loadJobs() {
             ${materialsBtn}${generateBtn}${urlBtn}${queueBtn}${applyBtn}${removeBtn}
           </div>
         </div>
-        ${strengthsHtml || missingHtml || summaryHtml || connsHtml ? `
+        ${strengthsHtml || missingHtml || summaryHtml || connsHtml || reasonHtml ? `
           <div>
             <button class="btn ghost" style="font-size:11px;height:22px;padding:0 8px" onclick="toggleDetails(${j.id})">▾ Details</button>
           </div>
           <div class="job-details" id="details-${j.id}">
             <div class="detail-row">${strengthsHtml}${missingHtml}${connsHtml}</div>
             ${summaryHtml}
+            ${reasonHtml}
           </div>
         ` : ''}
       </div>`;
